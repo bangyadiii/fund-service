@@ -28,9 +28,10 @@ func main() {
 	api := router.Group("/api/v1")
 
 	authApi := api.Group("/auth")
-
+	authApi.POST("/email-is-available", userHandler.CheckIsEmailAvailable)
 	authApi.POST("/register", userHandler.RegisterUser)
 	authApi.POST("/login", userHandler.Login)
+	authApi.POST("/avatars", userHandler.UploadAvatar)
 
 	router.Run()	
 }
