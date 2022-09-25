@@ -6,7 +6,7 @@ type User struct {
 	ID         int
 	Name       string
 	Occupation string
-	Email      string
+	Email      string `gorm:"index:idx_email,unique"`
 	Password   string
 	Avatar     string
 	Role       string
