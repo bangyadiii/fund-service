@@ -31,6 +31,12 @@ func (h *userHandler) RegisterUser(c *gin.Context){
 
 	}
 	newUser, err := h.userService.RegisterUser(input)
+	if err != nil {
+		errors := helper.FormatErrorValidation(err)
+		data :=  helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, errors)
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
 	newToken, err := h.authService.GenerateToken(newUser.ID, newUser.Email)
 
 	if err != nil {
