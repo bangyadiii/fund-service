@@ -3,8 +3,11 @@ package main
 import (
 	"backend-crowdfunding/auth"
 	"backend-crowdfunding/handler"
+	"backend-crowdfunding/middleware"
 	"backend-crowdfunding/user"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -39,7 +42,9 @@ func main() {
 	authApi.POST("/email-is-available", userHandler.CheckIsEmailAvailable)
 	authApi.POST("/register", userHandler.RegisterUser)
 	authApi.POST("/login", userHandler.Login)
-	authApi.POST("/avatars", userHandler.UploadAvatar)
+	authApi.POST("/avatars", middleware.VerifyToken(userService, authService), userHandler.UploadAvatar)
 
-	router.Run()	
+	appAddress := fmt.Sprintf("%s:%s", os.Getenv("APP_ADDRESS"), os.Getenv("PORT")) 
+	router.Run(appAddress)
 }
+

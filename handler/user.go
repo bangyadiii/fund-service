@@ -41,8 +41,8 @@ func (h *userHandler) RegisterUser(c *gin.Context){
 	}
 	if !isAvailableEmail{
 		respData := gin.H{"is_available" : isAvailableEmail}
-		data :=  helper.APIresponse("Email has been registered", http.StatusOK, "error", respData, nil)
-		c.JSON(http.StatusOK, data)
+		data :=  helper.APIresponse("Email has been registered", http.StatusBadRequest, "error", respData, nil)
+		c.JSON(http.StatusBadRequest, data)
 		return
 	}	
 
@@ -143,7 +143,8 @@ func (h *userHandler) UploadAvatar(c *gin.Context){
 	// TODO repo ambil data user ID 1
 	// TODO repo update data user dengan data nama avatar/ lokasi file avatar
 
-	userID := 1
+	currentUser := c.MustGet("current_user").(user.User)
+	userID := currentUser.ID
 	file, err := c.FormFile("avatar")
 	if err != nil {
 		data := gin.H{
