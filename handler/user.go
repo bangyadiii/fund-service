@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"backend-crowdfunding/auth"
 	"backend-crowdfunding/helper"
 	"backend-crowdfunding/user"
 	"fmt"
@@ -12,9 +13,10 @@ import (
 
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
-func NewUserHanlder(userService user.Service) *userHandler{
-	return &userHandler{userService}	
+func NewUserHanlder(userService user.Service, authService auth.Service) *userHandler{
+	return &userHandler{userService, authService}	
 }
 
 func (h *userHandler) RegisterUser(c *gin.Context){
@@ -29,7 +31,14 @@ func (h *userHandler) RegisterUser(c *gin.Context){
 
 	}
 	newUser, err := h.userService.RegisterUser(input)
-	formatedUser := user.FormatUser(newUser, "iniceritanya_token")
+	newToken, err := h.authService.GenerateToken(newUser.ID, newUser.Email)
+
+	if err != nil {
+		data :=  helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
+	formatedUser := user.FormatUser(newUser, newToken)
 
 	if err != nil {
 		data :=  helper.APIresponse("Register failed", http.StatusBadRequest, "error", nil,err)
@@ -60,8 +69,15 @@ func (h *userHandler) Login(c *gin.Context){
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
+	newToken, err := h.authService.GenerateToken(validUser.ID, validUser.Email)
 
-	formatedUser := user.FormatUser(validUser, "iniceritanya_token")
+	if err != nil {
+		data :=  helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
+
+	formatedUser := user.FormatUser(validUser,newToken)
 	data :=  helper.APIresponse("Login success", http.StatusOK, "success", formatedUser, nil)
 	c.JSON(http.StatusOK, data)
 		
@@ -144,4 +160,6 @@ func (h *userHandler) UploadAvatar(c *gin.Context){
 	c.JSON(http.StatusOK, response)
 
 }
+
+
 

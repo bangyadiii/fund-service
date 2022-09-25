@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend-crowdfunding/auth"
 	"backend-crowdfunding/handler"
 	"backend-crowdfunding/user"
 	"log"
@@ -21,12 +22,12 @@ func main() {
 
 	repository := user.NewRepository(db)
 	userService := user.NewService(repository)
-	userHandler := handler.NewUserHanlder(userService)
+	authService := auth.NewService()
+	userHandler := handler.NewUserHanlder(userService, authService)
 
 	router := gin.Default()
 
 	api := router.Group("/api/v1")
-
 	authApi := api.Group("/auth")
 	authApi.POST("/email-is-available", userHandler.CheckIsEmailAvailable)
 	authApi.POST("/register", userHandler.RegisterUser)
