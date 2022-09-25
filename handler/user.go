@@ -96,7 +96,8 @@ func (h *userHandler) CheckIsEmailAvailable(c *gin.Context){
 	}
 	IsEmailAvailable, err := h.userService.IsEmailAvailable(input)
 	if err != nil {
-		data :=  helper.APIresponse("Error", http.StatusBadRequest, "error", nil, err.Error())
+		errors := helper.FormatErrorValidation(err)
+		data :=  helper.APIresponse("Error", http.StatusBadRequest, "error", nil, errors)
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
@@ -126,7 +127,8 @@ func (h *userHandler) UploadAvatar(c *gin.Context){
 		data := gin.H{
 			"is_uploaded" : false,
 		}
-		response :=  helper.APIresponse("Failed to upload avatar 1", http.StatusBadRequest, "error", data, err.Error())
+		errors := helper.FormatErrorValidation(err)
+		response :=  helper.APIresponse("Failed to upload avatar 1", http.StatusBadRequest, "error", data, errors)
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
@@ -148,7 +150,8 @@ func (h *userHandler) UploadAvatar(c *gin.Context){
 		data := gin.H{
 			"is_uploaded" : false,
 		}
-		response :=  helper.APIresponse("Failed to upload avatar 3", http.StatusBadRequest, "error", data, err.Error())
+		errors := helper.FormatErrorValidation(err)
+		response :=  helper.APIresponse("Failed to upload avatar 3", http.StatusBadRequest, "error", data, errors)
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
