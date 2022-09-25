@@ -28,12 +28,28 @@ func (h *userHandler) RegisterUser(c *gin.Context){
 		data :=  helper.APIresponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, errors)
 		c.JSON(http.StatusBadRequest, data)
 		return
-
 	}
+	var checkEmailFormatInput user.CheckEmailInput
+	checkEmailFormatInput.Email = input.Email
+
+	isAvailableEmail, err := h.userService.IsEmailAvailable(checkEmailFormatInput)
+	
+	if err != nil {
+		data :=  helper.APIresponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, err.Error())
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
+	if !isAvailableEmail{
+		respData := gin.H{"is_available" : isAvailableEmail}
+		data :=  helper.APIresponse("Email has been registered", http.StatusOK, "error", respData, nil)
+		c.JSON(http.StatusOK, data)
+		return
+	}	
+
+
 	newUser, err := h.userService.RegisterUser(input)
 	if err != nil {
-		errors := helper.FormatErrorValidation(err)
-		data :=  helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, errors)
+		data :=  helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
@@ -47,7 +63,7 @@ func (h *userHandler) RegisterUser(c *gin.Context){
 	formatedUser := user.FormatUser(newUser, newToken)
 
 	if err != nil {
-		data :=  helper.APIresponse("Register failed", http.StatusBadRequest, "error", nil,err)
+		data :=  helper.APIresponse("Register failed", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}

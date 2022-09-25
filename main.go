@@ -13,7 +13,11 @@ import (
 )
 
 func main() {
-	godotenv.Load(".env")
+	err := godotenv.Load()
+	if err != nil {
+	    log.Fatal("Error loading .env file")
+	}
+	
 	dsn := "root:root@tcp(127.0.0.1:3306)/crowd_startup?charset=utf8mb4&parseTime=True&loc=Local"
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
