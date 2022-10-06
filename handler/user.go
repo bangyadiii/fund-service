@@ -135,14 +135,16 @@ func (h *userHandler) CheckIsEmailAvailable(c *gin.Context){
 	
 }
 
-func (h *userHandler) UploadAvatar(c *gin.Context){
-	// TODO input dari user
-	// TODO simpan gambarnya di folder /images/
-	// TODO di service panggil repo untuk simpan nama gambar
-	// TODO JWT (sementara hardcode, seakan2 user ID 1 yang akan upload avatar)
-	// TODO repo ambil data user ID 1
-	// TODO repo update data user dengan data nama avatar/ lokasi file avatar
 
+// TODO input dari user
+// TODO simpan gambarnya di folder /images/
+// TODO di service panggil repo untuk simpan nama gambar
+// TODO JWT (sementara hardcode, seakan2 user ID 1 yang akan upload avatar)
+// TODO repo ambil data user ID 1
+// TODO repo update data user dengan data nama avatar/ lokasi file avatar
+
+func (h *userHandler) UploadAvatar(c *gin.Context){
+	
 	currentUser := c.MustGet("current_user").(user.User)
 	userID := currentUser.ID
 	file, err := c.FormFile("avatar")

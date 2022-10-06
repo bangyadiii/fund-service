@@ -18,7 +18,7 @@ func main() {
 	    log.Fatal("Error loading .env file")
 	}
 	
-	dsn := "root:root@tcp(127.0.0.1:3306)/crowd_startup?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", os.Getenv("DATABASE_USER"), os.Getenv("DATABASE_PASSWORD"), os.Getenv("DATABASE_HOST"), os.Getenv("DATABASE_NAME"))
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
