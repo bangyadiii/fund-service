@@ -40,6 +40,7 @@ func GetRouter(db *gorm.DB) router {
 	// campaign router group
 	campaignRoute := api.Group("/campaigns")
 	campaignRoute.GET("/", campaignHandler.GetCampaigns)
+	campaignRoute.POST("/", campaignHandler.CreateNewCampaign)
 
 	return *router
 }
