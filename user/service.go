@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
+
 type Service interface {
 	RegisterUser(input RegisterUserInput) (User, error)
 	Login(input LoginUserInput) (User, error)
@@ -33,7 +34,7 @@ func (s *service) RegisterUser(input RegisterUserInput) (User, error) {
 		return user, err
 	}
 	user.Password = string(hash)
-	
+
 	newUser, err := s.repository.Save(user)
 
 	if err != nil {
@@ -44,13 +45,13 @@ func (s *service) RegisterUser(input RegisterUserInput) (User, error) {
 
 }
 
-func (s *service) Login(input LoginUserInput) (User, error){
+func (s *service) Login(input LoginUserInput) (User, error) {
 	email := input.Email
 	password := input.Password
 
 	user, err := s.repository.FindByEmail(email)
 	if err != nil {
-		return user, err 
+		return user, err
 	}
 	if user.ID == 0 {
 		return user, errors.New("there is no user with this email")
@@ -64,39 +65,39 @@ func (s *service) Login(input LoginUserInput) (User, error){
 	return user, nil
 }
 
-func (s *service) IsEmailAvailable(input CheckEmailInput) (bool, error){
+func (s *service) IsEmailAvailable(input CheckEmailInput) (bool, error) {
 	email := input.Email
 
 	user, err := s.repository.FindByEmail(email)
 	if err != nil {
-		return false, err 
+		return false, err
 	}
 	if user.ID == 0 {
-		return true, nil 
+		return true, nil
 	}
 
 	return false, nil
 }
 
-func (s *service) SaveAvatar(ID int, fileName string) (User, error){
+func (s *service) SaveAvatar(ID int, fileName string) (User, error) {
 
 	user, err := s.repository.FindByID(ID)
 	if err != nil {
-		return user, err 
+		return user, err
 	}
 	user.Avatar = fileName
 
 	updatedUser, err := s.repository.Update(user)
 	if err != nil {
-		return updatedUser, err 
+		return updatedUser, err
 	}
 	return updatedUser, nil
 }
-func (s *service) FindByID(ID int) (User, error){
+func (s *service) FindByID(ID int) (User, error) {
 
 	user, err := s.repository.FindByID(ID)
 	if err != nil {
-		return user, err 
+		return user, err
 	}
 	return user, nil
 }

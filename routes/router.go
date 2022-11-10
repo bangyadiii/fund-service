@@ -2,6 +2,7 @@ package routes
 
 import (
 	"backend-crowdfunding/auth"
+	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/handler"
 	"backend-crowdfunding/middleware"
 	"backend-crowdfunding/user"
@@ -10,13 +11,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type router struct{
+type router struct {
 	GinRouter *gin.Engine
-	db *gorm.DB
+	db        *gorm.DB
 }
 
-
-func GetRouter(db *gorm.DB) router{
+func GetRouter(db *gorm.DB) router {
 	router := newRouter(gin.Default(), db)
 
 	userRepository := user.NewRepository(db)
@@ -24,23 +24,26 @@ func GetRouter(db *gorm.DB) router{
 	authService := auth.NewService()
 	userHandler := handler.NewUserHanlder(userService, authService)
 
-	// campaignRepository := campaign.NewRepository(db)
-	// campaignService := campaign.NewService(campaignRepository)
-	// campaignHandler := handler.NewUserHanlder(campaignService, authService)
-
-
+	campaignRepository := campaign.NewRepository(db)
+	campaignService := campaign.NewService(campaignRepository)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
 
 	api := router.GinRouter.Group("/api/v1")
+
+	// auth router group
 	authApi := api.Group("/auth")
 	authApi.POST("/email-is-available", userHandler.CheckIsEmailAvailable)
 	authApi.POST("/register", userHandler.RegisterUser)
 	authApi.POST("/login", userHandler.Login)
 	authApi.POST("/avatars", middleware.VerifyToken(userService, authService), userHandler.UploadAvatar)
 
+	// campaign router group
+	campaignRoute := api.Group("/campaigns")
+	campaignRoute.GET("/", campaignHandler.GetCampaigns)
 
 	return *router
 }
 
-func newRouter(ginEngine *gin.Engine, db *gorm.DB) *router{
-	return &router{ginEngine,db}
+func newRouter(ginEngine *gin.Engine, db *gorm.DB) *router {
+	return &router{ginEngine, db}
 }
