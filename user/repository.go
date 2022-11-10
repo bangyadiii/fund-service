@@ -6,20 +6,20 @@ import (
 
 type Repository interface {
 	FindByEmail(email string) (User, error)
-	FindByID(id int) (User, error)
+	FindByID(id uint32) (User, error)
 	Save(user User) (User, error)
-	Update(user User) (User,error)
+	Update(user User) (User, error)
 }
 
 type repository struct {
 	db *gorm.DB
 }
 
-func NewRepository(db *gorm.DB) *repository{
+func NewRepository(db *gorm.DB) *repository {
 	return &repository{db}
 }
 
-func (r *repository) Save(user User) (User, error){
+func (r *repository) Save(user User) (User, error) {
 	data := r.db.Create(&user)
 
 	if data.Error != nil {
@@ -28,7 +28,7 @@ func (r *repository) Save(user User) (User, error){
 	return user, nil
 }
 
-func (r *repository) FindByEmail(email string) (User, error){
+func (r *repository) FindByEmail(email string) (User, error) {
 	var user User
 	err := r.db.Where("email = ?", email).Find(&user).Error
 
@@ -38,7 +38,7 @@ func (r *repository) FindByEmail(email string) (User, error){
 	return user, nil
 }
 
-func (r *repository) FindByID(id int) (User, error){
+func (r *repository) FindByID(id uint32) (User, error) {
 	var user User
 	err := r.db.Where("id = ?", id).Find(&user).Error
 
@@ -48,7 +48,7 @@ func (r *repository) FindByID(id int) (User, error){
 	return user, nil
 }
 
-func (r *repository) Update(user User) (User, error){
+func (r *repository) Update(user User) (User, error) {
 	err := r.db.Save(&user).Error
 
 	if err != nil {

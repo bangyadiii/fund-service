@@ -11,11 +11,11 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func VerifyToken(userService user.Service, authService auth.Service) gin.HandlerFunc{
-	return func (c *gin.Context){
+func VerifyToken(userService user.Service, authService auth.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// TODO mengecek request header dengan key Authorization
 		//  TODO mengecek, apakah value Authorization terdapat "Bearer" value
-		// TODO split string dengan spasi (" ") 
+		// TODO split string dengan spasi (" ")
 		// TODO mengambil array index ke 2
 		bearerToken := c.Request.Header.Get("Authorization")
 
@@ -27,9 +27,9 @@ func VerifyToken(userService user.Service, authService auth.Service) gin.Handler
 		splitBearer := strings.Split(bearerToken, " ")
 		var tokenString string = ""
 		if len(splitBearer) == 2 {
-			tokenString = splitBearer[1]	
+			tokenString = splitBearer[1]
 		}
-		accessToken,err := authService.ValidateToken(tokenString)
+		accessToken, err := authService.ValidateToken(tokenString)
 		if err != nil {
 			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
@@ -38,13 +38,13 @@ func VerifyToken(userService user.Service, authService auth.Service) gin.Handler
 		payload, ok := accessToken.Claims.(jwt.MapClaims)
 
 		if !ok || !accessToken.Valid {
-			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil,gin.H{"message" : "Do not have permissions to access this resources"})
+			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, gin.H{"message": "Do not have permissions to access this resources"})
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
-		userID := int(payload["_id"].(float64))
+		userID := uint32(payload["_id"].(float64))
 		user, err := userService.FindByID(userID)
-		
+
 		if err != nil {
 			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
@@ -52,7 +52,7 @@ func VerifyToken(userService user.Service, authService auth.Service) gin.Handler
 
 		}
 
-		if user.Email != payload["email"]{
+		if user.Email != payload["email"] {
 			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return

@@ -8,17 +8,18 @@ import (
 )
 
 type Service interface {
-	GenerateToken(ID int, email string) (string, error)
+	GenerateToken(ID uint32, email string) (string, error)
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
 type jwtService struct {
 	//
 }
+
 var secretKey string = os.Getenv("SECRET_KEY")
 var SECRET_KEY = []byte(secretKey)
 
-func (s *jwtService) GenerateToken(ID int, email string) (string, error) {
+func (s *jwtService) GenerateToken(ID uint32, email string) (string, error) {
 	//JWT
 	//claim = payload
 	claim := jwt.MapClaims{}
@@ -27,14 +28,14 @@ func (s *jwtService) GenerateToken(ID int, email string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 	signedToken, err := token.SignedString(SECRET_KEY)
-	if err != nil{
+	if err != nil {
 		return signedToken, err
 	}
 
 	return signedToken, nil
-	
+
 }
-func (s *jwtService) ValidateToken(token string) (*jwt.Token, error){
+func (s *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	//
 	decodedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
@@ -51,6 +52,6 @@ func (s *jwtService) ValidateToken(token string) (*jwt.Token, error){
 	return decodedToken, nil
 }
 
-func NewService() *jwtService{
+func NewService() *jwtService {
 	return &jwtService{}
 }
