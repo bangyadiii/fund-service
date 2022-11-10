@@ -26,7 +26,7 @@ type Campaign struct {
 type CampaignImage struct {
 	gorm.Model
 	ID         uint32
-	CampaignID int
+	CampaignID uint32 `gorm:"constraint:onDelete:CASCADE"`
 	ImageName  string
 	IsPrimary  int
 	CreatedAt  time.Time
