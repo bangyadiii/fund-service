@@ -20,17 +20,40 @@ func NewCampaignHandler(campaignService campaign.Service) *campaignHandler {
 func (h *campaignHandler) GetCampaigns(c *gin.Context) {
 	user_id, _ := strconv.Atoi(c.Query("user_id"))
 
-	user, err := h.campaignService.GetCampaigns(user_id)
+	data, err := h.campaignService.GetCampaigns(user_id)
 
 	if err != nil {
 		response := helper.APIresponse("Error occur while getting campaign", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
+	payload := campaign.FormatCampaignCollections(data)
 
-	res := helper.APIresponse("OK", http.StatusOK, "success", user, nil)
+	res := helper.APIresponse("OK", http.StatusOK, "success", payload, nil)
 
 	c.JSON(http.StatusOK, res)
+}
+
+func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
+	var input campaign.GetCampaignByIDInput
+	err := ctx.ShouldBindUri(&input)
+
+	if err != nil {
+		res := helper.APIresponse("Bad request", http.StatusBadRequest, "error", nil, err.Error())
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	data, err := h.campaignService.GetCampaignByID(input)
+
+	if err != nil {
+		res := helper.APIresponse("500", http.StatusInternalServerError, "error", nil, err.Error())
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+		return
+	}
+	formatted := campaign.FormatCampaignDetail(data)
+	payload := helper.APIresponse("OK", http.StatusOK, "success", formatted, nil)
+	ctx.JSON(http.StatusOK, payload)
 }
 
 func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
@@ -49,7 +72,7 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	formattedCampaign := campaign.FormatCampaign(data)
+	formattedCampaign := campaign.FormatCampaignDetail(data)
 	res := helper.APIresponse("CREATED", http.StatusCreated, "success", formattedCampaign, nil)
 	c.JSON(http.StatusCreated, res)
 }

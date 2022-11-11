@@ -6,6 +6,7 @@ type Repository interface {
 	FindAll() ([]Campaign, error)
 	GetCampaignByUserID(userID int) ([]Campaign, error)
 	Create(campaign Campaign) (Campaign, error)
+	GetCampaignByID(ID uint32) (Campaign, error)
 }
 
 type repository struct {
@@ -18,7 +19,18 @@ func NewRepository(db *gorm.DB) *repository {
 
 func (r *repository) FindAll() ([]Campaign, error) {
 	var campaigns []Campaign
-	err := r.db.Preload("CampaignImages", "campaign_images.is_primary = 1").Find(&campaigns).Error
+	err := r.db.Model(Campaign{}).Preload("CampaignImages", "campaign_images.is_primary = 1").Find(&campaigns).Error
+	if err != nil {
+		return campaigns, err
+	}
+
+	return campaigns, nil
+}
+
+func (r *repository) GetCampaignByID(ID uint32) (Campaign, error) {
+	var campaigns Campaign
+	err := r.db.Preload("CampainImages").First(&campaigns, ID).Error
+
 	if err != nil {
 		return campaigns, err
 	}

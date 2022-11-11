@@ -1,6 +1,46 @@
 package campaign
 
 type CampaignFormatter struct {
+	ID               uint32 `json:"id"`
+	Name             string `json:"name"`
+	ShortDescription string `json:"short_description"`
+	Description      string `json:"description"`
+	Slug             string `json:"slug"`
+	ImageUrl         string `json:"image_url"`
+	GoalAmount       int    `json:"goal_amount"`
+	CurrentAmount    int    `json:"current_amount"`
+	UserID           uint32 `json:"user_id"`
+}
+
+func FormatCampaignCollections(campaigns []Campaign) []CampaignFormatter {
+	var campaignsFormatted []CampaignFormatter
+
+	for _, data := range campaigns {
+		campaign := FormatCampaign(data)
+		campaignsFormatted = append(campaignsFormatted, campaign)
+	}
+
+	return campaignsFormatted
+}
+
+func FormatCampaign(campaign Campaign) CampaignFormatter {
+	formatted := CampaignFormatter{}
+
+	formatted.ID = campaign.ID
+	formatted.Name = campaign.Name
+	formatted.ShortDescription = campaign.ShortDescription
+	formatted.Description = campaign.Description
+	formatted.Slug = campaign.Slug
+	formatted.ImageUrl = ""
+
+	if len(campaign.CampaignImages) > 0 {
+		formatted.ImageUrl = campaign.CampaignImages[0].ImageName
+	}
+
+	return formatted
+}
+
+type CampaignDetailFormatter struct {
 	ID               uint32          `json:"id"`
 	UserID           uint32          `json:"user_id"`
 	Name             string          `json:"name"`
@@ -14,8 +54,8 @@ type CampaignFormatter struct {
 	CampaignImages   []CampaignImage `json:"campaign_images"`
 }
 
-func FormatCampaign(campaign Campaign) CampaignFormatter {
-	formatted := CampaignFormatter{
+func FormatCampaignDetail(campaign Campaign) CampaignDetailFormatter {
+	formatted := CampaignDetailFormatter{
 		ID:               campaign.ID,
 		Name:             campaign.Name,
 		UserID:           campaign.UserID,
@@ -26,12 +66,8 @@ func FormatCampaign(campaign Campaign) CampaignFormatter {
 		GoalAmount:       campaign.GoalAmount,
 		CurrentAmount:    campaign.CurrentAmount,
 		Slug:             campaign.Slug,
+		CampaignImages:   campaign.CampaignImages,
 	}
 
 	return formatted
-}
-
-func FormatCampaignCollection(campaign []Campaign) []CampaignFormatter {
-
-	return nil
 }

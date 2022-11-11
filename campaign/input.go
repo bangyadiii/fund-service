@@ -10,3 +10,7 @@ type CreateCampaignInput struct {
 	GoalAmount       uint   `json:"goal_amount" binding:"required,numeric"`
 	Slug             string `json:"slug" binding:"required"`
 }
+
+type GetCampaignByIDInput struct {
+	ID uint32 `uri:"id" binding:"required"`
+}
