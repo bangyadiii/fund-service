@@ -45,8 +45,7 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 
 	data, err := h.campaignService.CreateCampaign(input)
 	if err != nil {
-		errors := helper.FormatErrorValidation(err)
-		res := helper.APIresponse("Something went wrong", http.StatusBadRequest, "error", nil, errors)
+		res := helper.APIresponse("Something went wrong", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
