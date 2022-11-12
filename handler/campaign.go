@@ -79,3 +79,41 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 	res := helper.APIresponse("CREATED", http.StatusCreated, "success", formattedCampaign, nil)
 	c.JSON(http.StatusCreated, res)
 }
+
+func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
+	var input campaign.UpdateCampaignInput
+	var campaignID campaign.GetCampaignByIDInput
+
+	err := ctx.ShouldBindUri(&campaignID)
+
+	if err != nil {
+		errors := helper.FormatErrorValidation(err)
+		res := helper.APIresponse("Bad Request", http.StatusBadRequest, "error", nil, errors)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	err = ctx.ShouldBindJSON(&input)
+
+	if err != nil {
+		errors := helper.FormatErrorValidation(err)
+		res := helper.APIresponse("Bad Request", http.StatusBadRequest, "error", nil, errors)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+	curUser := ctx.MustGet("current_user").(user.User)
+	input.User = curUser
+
+	data, err := h.campaignService.UpdateCampaign(campaignID, input)
+
+	if err != nil {
+		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+		return
+	}
+
+	formattedCampaign := campaign.FormatCampaignDetail(data)
+	res := helper.APIresponse("OK", http.StatusOK, "success", formattedCampaign, nil)
+
+	ctx.JSON(http.StatusOK, res)
+}

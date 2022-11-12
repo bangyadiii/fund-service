@@ -7,6 +7,7 @@ type Repository interface {
 	GetCampaignByUserID(userID uint) ([]Campaign, error)
 	Create(campaign Campaign) (Campaign, error)
 	GetCampaignByID(ID uint) (Campaign, error)
+	Update(campaign Campaign) (Campaign, error)
 }
 
 type repository struct {
@@ -29,7 +30,7 @@ func (r *repository) FindAll() ([]Campaign, error) {
 
 func (r *repository) GetCampaignByID(ID uint) (Campaign, error) {
 	var campaigns Campaign = Campaign{ID: ID}
-	err := r.db.Preload("CampainImages").First(&campaigns).Error
+	err := r.db.Preload("CampaignImages").First(&campaigns).Error
 
 	if err != nil {
 		return campaigns, err
@@ -57,4 +58,14 @@ func (r *repository) Create(campaign Campaign) (Campaign, error) {
 
 	return campaign, nil
 
+}
+
+func (r *repository) Update(campaign Campaign) (Campaign, error) {
+	err := r.db.Save(&campaign).Error
+
+	if err != nil {
+		return campaign, err
+	}
+
+	return campaign, nil
 }

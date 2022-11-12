@@ -1,6 +1,7 @@
 package campaign
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -11,6 +12,7 @@ type Service interface {
 	GetCampaigns(userID uint) ([]Campaign, error)
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
 	GetCampaignByID(input GetCampaignByIDInput) (Campaign, error)
+	UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCampaignInput) (Campaign, error)
 }
 
 type service struct {
@@ -69,5 +71,30 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 	}
 
 	return newCampaign, nil
+}
+
+func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCampaignInput) (Campaign, error) {
+	oldCampaign, err := s.repository.GetCampaignByID(campaignID.ID)
+	if err != nil {
+		return oldCampaign, err
+	}
+	if oldCampaign.User.ID != input.User.ID {
+		return oldCampaign, errors.New("Unauthorized")
+	}
+
+	oldCampaign.Description = input.Description
+	oldCampaign.ShortDescription = input.ShortDescription
+	oldCampaign.BackerCount = int(input.BackerCount)
+	oldCampaign.CurrentAmount = int(input.CurrentAmount)
+	oldCampaign.GoalAmount = int(input.GoalAmount)
+	oldCampaign.Perks = input.Perks
+
+	data, err := s.repository.Update(oldCampaign)
+
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
 
 }

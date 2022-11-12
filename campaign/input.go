@@ -15,3 +15,14 @@ type CreateCampaignInput struct {
 type GetCampaignByIDInput struct {
 	ID uint `uri:"id" binding:"required"`
 }
+
+type UpdateCampaignInput struct {
+	Name             string `json:"name"`
+	ShortDescription string `json:"short_description"`
+	Description      string `json:"description" `
+	Perks            string `json:"perks"`
+	BackerCount      uint   `json:"backer_count" `
+	GoalAmount       uint   `json:"goal_amount"`
+	CurrentAmount    uint   `json:"current_amount"`
+	User             user.User
+}

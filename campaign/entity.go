@@ -28,7 +28,6 @@ type Campaign struct {
 type CampaignImage struct {
 	ID         uint `gorm:"primaryKey"`
 	CampaignID uint
-	Campaign   Campaign
 	ImageName  string
 	IsPrimary  int
 	CreatedAt  time.Time
