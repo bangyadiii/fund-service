@@ -78,7 +78,8 @@ func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCa
 	if err != nil {
 		return oldCampaign, err
 	}
-	if oldCampaign.User.ID != input.User.ID {
+
+	if oldCampaign.UserID != input.User.ID {
 		return oldCampaign, errors.New("Unauthorized")
 	}
 

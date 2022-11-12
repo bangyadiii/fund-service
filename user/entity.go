@@ -9,7 +9,7 @@ type User struct {
 	Name       string
 	Occupation string
 	Email      string `gorm:"index:idx_email,unique"`
-	Password   string
+	Password   string `json:"-"`
 	Avatar     string
 	Role       string
 	CreatedAt  time.Time
