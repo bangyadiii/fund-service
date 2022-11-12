@@ -31,6 +31,7 @@ func FormatCampaign(campaign Campaign) CampaignFormatter {
 	formatted.ShortDescription = campaign.ShortDescription
 	formatted.Description = campaign.Description
 	formatted.Slug = campaign.Slug
+	formatted.UserID = campaign.UserID
 	formatted.ImageUrl = ""
 
 	if len(campaign.CampaignImages) > 0 {
