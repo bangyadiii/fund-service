@@ -28,8 +28,8 @@ func (r *repository) FindAll() ([]Campaign, error) {
 }
 
 func (r *repository) GetCampaignByID(ID uint) (Campaign, error) {
-	var campaigns Campaign
-	err := r.db.Where("id = ?", ID).Preload("CampainImages").Find(&campaigns).Error
+	var campaigns Campaign = Campaign{ID: ID}
+	err := r.db.Preload("CampainImages").First(&campaigns).Error
 
 	if err != nil {
 		return campaigns, err

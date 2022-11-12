@@ -9,7 +9,7 @@ import (
 
 type Campaign struct {
 	ID               uint `gorm:"primaryKey"`
-	User             user.User 
+	User             user.User
 	UserID           uint
 	Name             string
 	ShortDescription string
@@ -18,7 +18,7 @@ type Campaign struct {
 	BackerCount      int
 	GoalAmount       int
 	CurrentAmount    int
-	Slug             string
+	Slug             string `gorm:"uniqueIndex"`
 	CampaignImages   []CampaignImage
 	CreatedAt        time.Time
 	UpdatedAt        time.Time

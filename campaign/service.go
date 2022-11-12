@@ -1,5 +1,12 @@
 package campaign
 
+import (
+	"fmt"
+	"math/rand"
+
+	"github.com/gosimple/slug"
+)
+
 type Service interface {
 	GetCampaigns(userID uint) ([]Campaign, error)
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
@@ -45,13 +52,15 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 	campaign := Campaign{}
 
 	campaign.Name = input.Name
-	campaign.UserID = uint(input.UserID)
+	campaign.UserID = input.User.ID
 	campaign.ShortDescription = input.ShortDescription
 	campaign.Description = input.Description
 	campaign.Perks = input.Perks
 	campaign.BackerCount = int(input.BackerCount)
 	campaign.GoalAmount = int(input.GoalAmount)
-	campaign.Slug = input.Slug
+
+	slugCandidate := fmt.Sprintf("%s %d%d", input.Name, input.User.ID, rand.Int())
+	campaign.Slug = slug.Make(slugCandidate)
 
 	newCampaign, err := s.repository.Create(campaign)
 

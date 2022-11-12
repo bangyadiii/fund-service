@@ -3,6 +3,7 @@ package handler
 import (
 	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/helper"
+	"backend-crowdfunding/user"
 	"net/http"
 	"strconv"
 
@@ -65,6 +66,8 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
+	curUser := c.MustGet("current_user").(user.User)
+	input.User = curUser
 
 	data, err := h.campaignService.CreateCampaign(input)
 	if err != nil {
