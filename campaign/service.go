@@ -103,9 +103,27 @@ func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCa
 
 func (s *service) UploadCampaignImage(input UploadCampaignImageInput) (CampaignImage, error) {
 	var image CampaignImage
+	campaign, err := s.repository.GetCampaignByID(input.CampaignID)
+	if err != nil {
+		return image, err
+	}
+
+	if campaign.User.ID != input.User.ID {
+		return image, errors.New("Unauthorized")
+	}
+
+	if input.IsPrimary {
+		_, err := s.repository.MarkAllImagesAsNonPrimary(input.CampaignID)
+
+		if err != nil {
+			return image, err
+		}
+
+	}
+
+	image.IsPrimary = input.IsPrimary
 	image.CampaignID = input.CampaignID
 	image.ImageName = input.ImageName
-	image.IsPrimary = input.IsPrimary
 
 	campaignImage, err := s.repository.UploadImage(image)
 	if err != nil {

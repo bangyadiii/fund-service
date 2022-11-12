@@ -29,6 +29,7 @@ type UpdateCampaignInput struct {
 
 type UploadCampaignImageInput struct {
 	CampaignID uint `form:"campaign_id" binding:"required"`
-	IsPrimary  int  `form:"is_primary" binding:"required"`
+	IsPrimary  bool `form:"is_primary"`
 	ImageName  string
+	User       user.User
 }

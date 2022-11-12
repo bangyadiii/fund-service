@@ -18,7 +18,7 @@ type Campaign struct {
 	BackerCount      int
 	GoalAmount       int
 	CurrentAmount    int
-	Slug             string `gorm:"uniqueIndex"`
+	Slug             string `gorm:"size:256;uniqueIndex"`
 	CampaignImages   []CampaignImage
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
@@ -29,7 +29,7 @@ type CampaignImage struct {
 	ID         uint `gorm:"primaryKey"`
 	CampaignID uint
 	ImageName  string
-	IsPrimary  int
+	IsPrimary  bool
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	DeletedAt  gorm.DeletedAt `gorm:"index"`

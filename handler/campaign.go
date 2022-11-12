@@ -131,6 +131,7 @@ func (h *campaignHandler) UploadCampaignImage(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
+	input.User = ctx.MustGet("current_user").(user.User)
 
 	imageFile, err := ctx.FormFile("campaign_image")
 
