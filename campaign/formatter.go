@@ -1,7 +1,7 @@
 package campaign
 
 type CampaignFormatter struct {
-	ID               uint32 `json:"id"`
+	ID               uint   `json:"id"`
 	Name             string `json:"name"`
 	ShortDescription string `json:"short_description"`
 	Description      string `json:"description"`
@@ -9,7 +9,7 @@ type CampaignFormatter struct {
 	ImageUrl         string `json:"image_url"`
 	GoalAmount       int    `json:"goal_amount"`
 	CurrentAmount    int    `json:"current_amount"`
-	UserID           uint32 `json:"user_id"`
+	UserID           uint   `json:"user_id"`
 }
 
 func FormatCampaignCollections(campaigns []Campaign) []CampaignFormatter {
@@ -41,8 +41,8 @@ func FormatCampaign(campaign Campaign) CampaignFormatter {
 }
 
 type CampaignDetailFormatter struct {
-	ID               uint32          `json:"id"`
-	UserID           uint32          `json:"user_id"`
+	ID               uint            `json:"id"`
+	UserID           uint            `json:"user_id"`
 	Name             string          `json:"name"`
 	ShortDescription string          `json:"short_description"`
 	Description      string          `json:"description"`

@@ -1,7 +1,7 @@
 package campaign
 
 type CreateCampaignInput struct {
-	UserID           uint32 `json:"user_id" binding:"required" validate:"numeric"`
+	UserID           uint   `json:"user_id" binding:"required" validate:"numeric"`
 	Name             string `json:"name" binding:"required"`
 	ShortDescription string `json:"short_description"`
 	Description      string `json:"description" binding:"required"`
@@ -12,5 +12,5 @@ type CreateCampaignInput struct {
 }
 
 type GetCampaignByIDInput struct {
-	ID uint32 `uri:"id" binding:"required"`
+	ID uint `uri:"id" binding:"required"`
 }

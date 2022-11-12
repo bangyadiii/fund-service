@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	GenerateToken(ID uint32, email string) (string, error)
+	GenerateToken(ID uint, email string) (string, error)
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
@@ -19,7 +19,7 @@ type jwtService struct {
 var secretKey string = os.Getenv("SECRET_KEY")
 var SECRET_KEY = []byte(secretKey)
 
-func (s *jwtService) GenerateToken(ID uint32, email string) (string, error) {
+func (s *jwtService) GenerateToken(ID uint, email string) (string, error) {
 	//JWT
 	//claim = payload
 	claim := jwt.MapClaims{}

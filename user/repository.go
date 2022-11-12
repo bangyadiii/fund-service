@@ -6,7 +6,7 @@ import (
 
 type Repository interface {
 	FindByEmail(email string) (User, error)
-	FindByID(id uint32) (User, error)
+	FindByID(id uint) (User, error)
 	Save(user User) (User, error)
 	Update(user User) (User, error)
 }
@@ -38,7 +38,7 @@ func (r *repository) FindByEmail(email string) (User, error) {
 	return user, nil
 }
 
-func (r *repository) FindByID(id uint32) (User, error) {
+func (r *repository) FindByID(id uint) (User, error) {
 	var user User
 	err := r.db.Where("id = ?", id).Find(&user).Error
 

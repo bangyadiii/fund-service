@@ -1,9 +1,11 @@
 package user
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
-	ID         uint32
+	ID         uint `gorm:"primaryKey"`
 	Name       string
 	Occupation string
 	Email      string `gorm:"index:idx_email,unique"`

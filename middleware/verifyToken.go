@@ -42,7 +42,7 @@ func VerifyToken(userService user.Service, authService auth.Service) gin.Handler
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
-		userID := uint32(payload["_id"].(float64))
+		userID := uint(payload["_id"].(float64))
 		user, err := userService.FindByID(userID)
 
 		if err != nil {

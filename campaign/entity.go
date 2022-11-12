@@ -1,15 +1,16 @@
 package campaign
 
 import (
+	"backend-crowdfunding/user"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type Campaign struct {
-	gorm.Model
-	ID               uint32
-	UserID           uint32
+	ID               uint `gorm:"primaryKey"`
+	User             user.User 
+	UserID           uint
 	Name             string
 	ShortDescription string
 	Description      string
@@ -21,14 +22,16 @@ type Campaign struct {
 	CampaignImages   []CampaignImage
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+	DeletedAt        gorm.DeletedAt `gorm:"index"`
 }
 
 type CampaignImage struct {
-	gorm.Model
-	ID         uint32
-	CampaignID uint32
+	ID         uint `gorm:"primaryKey"`
+	CampaignID uint
+	Campaign   Campaign
 	ImageName  string
 	IsPrimary  int
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }

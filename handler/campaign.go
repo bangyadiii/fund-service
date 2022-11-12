@@ -18,9 +18,9 @@ func NewCampaignHandler(campaignService campaign.Service) *campaignHandler {
 }
 
 func (h *campaignHandler) GetCampaigns(c *gin.Context) {
-	user_id, _ := strconv.Atoi(c.Query("user_id"))
-
-	data, err := h.campaignService.GetCampaigns(user_id)
+	user_id, _ := strconv.ParseUint(c.Query("user_id"), 32, 64)
+	userID := uint(user_id)
+	data, err := h.campaignService.GetCampaigns(userID)
 
 	if err != nil {
 		response := helper.APIresponse("Error occur while getting campaign", http.StatusBadRequest, "error", nil, err.Error())
@@ -47,7 +47,7 @@ func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
 	data, err := h.campaignService.GetCampaignByID(input)
 
 	if err != nil {
-		res := helper.APIresponse("500", http.StatusInternalServerError, "error", nil, err.Error())
+		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 		return
 	}

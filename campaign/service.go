@@ -1,7 +1,7 @@
 package campaign
 
 type Service interface {
-	GetCampaigns(userID int) ([]Campaign, error)
+	GetCampaigns(userID uint) ([]Campaign, error)
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
 	GetCampaignByID(input GetCampaignByIDInput) (Campaign, error)
 }
@@ -14,7 +14,7 @@ func NewService(repository Repository) *service {
 	return &service{repository}
 }
 
-func (s *service) GetCampaigns(userID int) ([]Campaign, error) {
+func (s *service) GetCampaigns(userID uint) ([]Campaign, error) {
 	if userID != 0 {
 		campaigns, err := s.repository.GetCampaignByUserID(userID)
 		if err != nil {
@@ -45,7 +45,7 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 	campaign := Campaign{}
 
 	campaign.Name = input.Name
-	campaign.UserID = uint32(input.UserID)
+	campaign.UserID = uint(input.UserID)
 	campaign.ShortDescription = input.ShortDescription
 	campaign.Description = input.Description
 	campaign.Perks = input.Perks
