@@ -3,6 +3,7 @@ package main
 import (
 	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/routes"
+	"backend-crowdfunding/transaction"
 	"backend-crowdfunding/user"
 	"fmt"
 	"log"
@@ -26,7 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatal("error : ", err.Error())
 	}
-	db.AutoMigrate(&user.User{}, &campaign.Campaign{}, &campaign.CampaignImage{})
+	db.AutoMigrate(&user.User{}, &campaign.Campaign{}, &campaign.CampaignImage{}, &transaction.Transaction{})
 
 	router := routes.GetRouter(db)
 
