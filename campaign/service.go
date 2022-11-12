@@ -13,6 +13,7 @@ type Service interface {
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
 	GetCampaignByID(input GetCampaignByIDInput) (Campaign, error)
 	UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCampaignInput) (Campaign, error)
+	UploadCampaignImage(input UploadCampaignImageInput) (CampaignImage, error)
 }
 
 type service struct {
@@ -98,4 +99,18 @@ func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCa
 
 	return data, nil
 
+}
+
+func (s *service) UploadCampaignImage(input UploadCampaignImageInput) (CampaignImage, error) {
+	var image CampaignImage
+	image.CampaignID = input.CampaignID
+	image.ImageName = input.ImageName
+	image.IsPrimary = input.IsPrimary
+
+	campaignImage, err := s.repository.UploadImage(image)
+	if err != nil {
+		return campaignImage, err
+	}
+
+	return campaignImage, nil
 }

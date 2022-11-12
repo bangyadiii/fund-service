@@ -4,8 +4,11 @@ import (
 	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/helper"
 	"backend-crowdfunding/user"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -116,4 +119,53 @@ func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
 	res := helper.APIresponse("OK", http.StatusOK, "success", formattedCampaign, nil)
 
 	ctx.JSON(http.StatusOK, res)
+}
+
+func (h *campaignHandler) UploadCampaignImage(ctx *gin.Context) {
+	var input campaign.UploadCampaignImageInput
+	err := ctx.ShouldBind(&input)
+
+	if err != nil {
+		erros := helper.FormatErrorValidation(err)
+		res := helper.APIresponse("Bad Reqeust", http.StatusBadRequest, "error", nil, erros)
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	imageFile, err := ctx.FormFile("campaign_image")
+
+	if err != nil {
+		res := helper.APIresponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	path := fmt.Sprintf("assets/images/campaigns/%d-%d-%s", input.CampaignID, time.Now().Day(), imageFile.Filename)
+
+	err = ctx.SaveUploadedFile(imageFile, path)
+
+	if err != nil {
+		data := gin.H{
+			"is_uploaded": false,
+		}
+		response := helper.APIresponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	input.ImageName = path
+	payload, err := h.campaignService.UploadCampaignImage(input)
+
+	if err != nil {
+		os.Remove(path)
+		data := gin.H{
+			"is_uploaded": false,
+		}
+		res := helper.APIresponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
+		ctx.JSON(http.StatusBadRequest, res)
+		return
+	}
+
+	response := helper.APIresponse("Avatar successfuly uploaded.", http.StatusOK, "success", payload, nil)
+	ctx.JSON(http.StatusOK, response)
 }

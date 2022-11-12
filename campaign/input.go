@@ -26,3 +26,9 @@ type UpdateCampaignInput struct {
 	CurrentAmount    uint   `json:"current_amount"`
 	User             user.User
 }
+
+type UploadCampaignImageInput struct {
+	CampaignID uint `form:"campaign_id" binding:"required"`
+	IsPrimary  int  `form:"is_primary" binding:"required"`
+	ImageName  string
+}

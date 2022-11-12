@@ -8,6 +8,7 @@ type Repository interface {
 	Create(campaign Campaign) (Campaign, error)
 	GetCampaignByID(ID uint) (Campaign, error)
 	Update(campaign Campaign) (Campaign, error)
+	UploadImage(image CampaignImage) (CampaignImage, error)
 }
 
 type repository struct {
@@ -68,4 +69,13 @@ func (r *repository) Update(campaign Campaign) (Campaign, error) {
 	}
 
 	return campaign, nil
+}
+
+func (r *repository) UploadImage(image CampaignImage) (CampaignImage, error) {
+	err := r.db.Create(&image).Error
+	if err != nil {
+		return image, err
+	}
+
+	return image, nil
 }

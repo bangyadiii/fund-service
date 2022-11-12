@@ -71,3 +71,9 @@ func FormatCampaignDetail(campaign Campaign) CampaignDetailFormatter {
 
 	return formatted
 }
+
+type CampaignImageFormatter struct {
+	CampaignID uint   `json:"campaign_id"`
+	ImageName  string `json:"image_name"`
+	IsPrimary  string `json:"is_primary"`
+}
