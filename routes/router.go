@@ -1,12 +1,10 @@
 package routes
 
 import (
-	"backend-crowdfunding/auth"
-	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/handler"
 	"backend-crowdfunding/middleware"
-	"backend-crowdfunding/model.Transaction"
-	"backend-crowdfunding/user"
+	"backend-crowdfunding/src/repository"
+	"backend-crowdfunding/src/service"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -20,18 +18,18 @@ type router struct {
 func GetRouter(db *gorm.DB) router {
 	router := newRouter(gin.Default(), db)
 
-	userRepository := user.NewRepository(db)
-	userService := user.NewService(userRepository)
-	authService := auth.NewService()
+	userRepository := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepository)
+	authService := service.NewAuthService()
 	userHandler := handler.NewUserHanlder(userService, authService)
 
-	campaignRepository := campaign.NewRepository(db)
-	campaignService := campaign.NewService(campaignRepository)
+	campaignRepository := repository.NewCampaignRepository(db)
+	campaignService := service.NewCampaignService(campaignRepository)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
-	trxRepo := model.Transaction.NewRepository(db)
-	trxService := model.Transaction.NewService(trxRepo)
-	trxHandler := handler.Newmodel.TransactionHandler(trxService)
+	trxRepo := repository.NewTransactionRepository(db)
+	trxService := service.NewTransactionService(trxRepo)
+	trxHandler := handler.NewTransactionHandler(trxService)
 
 	api := router.GinRouter.Group("/api/v1")
 
@@ -54,8 +52,8 @@ func GetRouter(db *gorm.DB) router {
 	campaignRoute.POST("/", middleware.VerifyToken(userService, authService), campaignHandler.CreateNewCampaign)
 
 	trxRoutes := api.Group("/model.Transactions")
-	trxRoutes.GET("/", trxHandler.GetAllmodel.TransactionsByCampaignID)
-	trxRoutes.POST("/", middleware.VerifyToken(userService, authService), trxHandler.Createmodel.Transaction)
+	trxRoutes.GET("/", trxHandler.GetAllTransactionsByCampaignID)
+	trxRoutes.POST("/", middleware.VerifyToken(userService, authService), trxHandler.CreateTransaction)
 
 	return *router
 }

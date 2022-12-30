@@ -11,6 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type TransactionHandler interface {
+	GetAllTransactionsByCampaignID(c *gin.Context)
+	CreateTransaction(c *gin.Context)
+}
+
 type trxHandler struct {
 	trxService service.TransactionService
 }

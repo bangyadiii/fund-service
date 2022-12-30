@@ -15,6 +15,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type CampaignHandler interface {
+	GetCampaigns(c *gin.Context)
+	GetCampaignByID(c *gin.Context)
+	CreateNewCampaign(c *gin.Context)
+	UpdateCampaign(c *gin.Context)
+	UploadCampaignImage(c *gin.Context)
+}
+
 type campaignHandler struct {
 	campaignService service.CampaignService
 }
