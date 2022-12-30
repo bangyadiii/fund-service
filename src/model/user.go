@@ -1,7 +1,6 @@
-package user
+package model
 
 import (
-	"backend-crowdfunding/transaction"
 	"time"
 )
 
@@ -13,7 +12,7 @@ type User struct {
 	Password     string `json:"-"`
 	Avatar       string
 	Role         string
-	Transactions []transaction.Transaction
+	Transactions []Transaction
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

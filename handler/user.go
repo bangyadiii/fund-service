@@ -1,9 +1,11 @@
 package handler
 
 import (
-	"backend-crowdfunding/auth"
+	"backend-crowdfunding/formatter"
 	"backend-crowdfunding/helper"
-	"backend-crowdfunding/user"
+	"backend-crowdfunding/src/model"
+	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/service"
 	"fmt"
 	"net/http"
 
@@ -11,16 +13,16 @@ import (
 )
 
 type userHandler struct {
-	userService user.Service
-	authService auth.Service
+	userService service.UserService
+	authService service.AuthService
 }
 
-func NewUserHanlder(userService user.Service, authService auth.Service) *userHandler {
+func NewUserHanlder(userService service.UserService, authService service.AuthService) *userHandler {
 	return &userHandler{userService, authService}
 }
 
 func (h *userHandler) RegisterUser(c *gin.Context) {
-	var input user.RegisterUserInput
+	var input request.RegisterUserInput
 
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
@@ -29,7 +31,7 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
-	var checkEmailFormatInput user.CheckEmailInput
+	var checkEmailFormatInput request.CheckEmailInput
 	checkEmailFormatInput.Email = input.Email
 
 	isAvailableEmail, err := h.userService.IsEmailAvailable(checkEmailFormatInput)
@@ -59,7 +61,7 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
-	formatedUser := user.FormatUser(newUser, newToken)
+	formatedUser := formatter.FormatUser(newUser, newToken)
 
 	if err != nil {
 		data := helper.APIresponse("Register failed", http.StatusBadRequest, "error", nil, err.Error())
@@ -73,7 +75,7 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 }
 
 func (h *userHandler) Login(c *gin.Context) {
-	var input user.LoginUserInput
+	var input request.LoginUserInput
 	err := c.ShouldBindJSON(&input)
 
 	if err != nil {
@@ -97,14 +99,14 @@ func (h *userHandler) Login(c *gin.Context) {
 		return
 	}
 
-	formatedUser := user.FormatUser(validUser, newToken)
+	formatedUser := formatter.FormatUser(validUser, newToken)
 	data := helper.APIresponse("Login success", http.StatusOK, "success", formatedUser, nil)
 	c.JSON(http.StatusOK, data)
 
 }
 
 func (h *userHandler) CheckIsEmailAvailable(c *gin.Context) {
-	var input user.CheckEmailInput
+	var input request.CheckEmailInput
 	err := c.ShouldBindJSON(&input)
 
 	if err != nil {
@@ -141,7 +143,7 @@ func (h *userHandler) CheckIsEmailAvailable(c *gin.Context) {
 
 func (h *userHandler) UploadAvatar(c *gin.Context) {
 
-	currentUser := c.MustGet("current_user").(user.User)
+	currentUser := c.MustGet("current_user").(model.User)
 	userID := currentUser.ID
 	file, err := c.FormFile("avatar")
 	if err != nil {

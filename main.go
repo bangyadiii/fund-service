@@ -1,10 +1,8 @@
 package main
 
 import (
-	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/routes"
-	"backend-crowdfunding/transaction"
-	"backend-crowdfunding/user"
+	"backend-crowdfunding/src/model"
 	"fmt"
 	"log"
 	"os"
@@ -27,10 +25,12 @@ func main() {
 	if err != nil {
 		log.Fatal("error : ", err.Error())
 	}
-	db.AutoMigrate(&user.User{}, &campaign.Campaign{}, &campaign.CampaignImage{}, &transaction.Transaction{})
+	db.AutoMigrate(&model.User{}, &model.Campaign{}, &model.CampaignImage{}, &model.Transaction{})
 
 	router := routes.GetRouter(db)
 
 	appAddress := fmt.Sprintf("%s:%s", os.Getenv("APP_ADDRESS"), os.Getenv("PORT"))
+
+	router.GinRouter.Static("/images", "./assets/images")
 	router.GinRouter.Run(appAddress)
 }

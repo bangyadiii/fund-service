@@ -5,7 +5,7 @@ import (
 	"backend-crowdfunding/campaign"
 	"backend-crowdfunding/handler"
 	"backend-crowdfunding/middleware"
-	"backend-crowdfunding/transaction"
+	"backend-crowdfunding/model.Transaction"
 	"backend-crowdfunding/user"
 
 	"github.com/gin-gonic/gin"
@@ -29,9 +29,9 @@ func GetRouter(db *gorm.DB) router {
 	campaignService := campaign.NewService(campaignRepository)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
-	trxRepo := transaction.NewRepository(db)
-	trxService := transaction.NewService(trxRepo)
-	trxHandler := handler.NewTransactionHandler(trxService)
+	trxRepo := model.Transaction.NewRepository(db)
+	trxService := model.Transaction.NewService(trxRepo)
+	trxHandler := handler.Newmodel.TransactionHandler(trxService)
 
 	api := router.GinRouter.Group("/api/v1")
 
@@ -53,8 +53,9 @@ func GetRouter(db *gorm.DB) router {
 	campaignRoute.GET("/", campaignHandler.GetCampaigns)
 	campaignRoute.POST("/", middleware.VerifyToken(userService, authService), campaignHandler.CreateNewCampaign)
 
-	trxRoutes := api.Group("/transactions")
-	trxRoutes.GET("/", trxHandler.GetAllTransactionsByCampaignID)
+	trxRoutes := api.Group("/model.Transactions")
+	trxRoutes.GET("/", trxHandler.GetAllmodel.TransactionsByCampaignID)
+	trxRoutes.POST("/", middleware.VerifyToken(userService, authService), trxHandler.Createmodel.Transaction)
 
 	return *router
 }

@@ -1,4 +1,4 @@
-package auth
+package service
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-type Service interface {
+type AuthService interface {
 	GenerateToken(ID uint, email string) (string, error)
 	ValidateToken(token string) (*jwt.Token, error)
 }
@@ -52,6 +52,6 @@ func (s *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	return decodedToken, nil
 }
 
-func NewService() *jwtService {
+func NewAuthService() *jwtService {
 	return &jwtService{}
 }

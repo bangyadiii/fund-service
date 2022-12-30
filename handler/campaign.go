@@ -1,9 +1,11 @@
 package handler
 
 import (
-	"backend-crowdfunding/campaign"
+	"backend-crowdfunding/formatter"
 	"backend-crowdfunding/helper"
-	"backend-crowdfunding/user"
+	"backend-crowdfunding/src/model"
+	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/service"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,10 +16,10 @@ import (
 )
 
 type campaignHandler struct {
-	campaignService campaign.Service
+	campaignService service.CampaignService
 }
 
-func NewCampaignHandler(campaignService campaign.Service) *campaignHandler {
+func NewCampaignHandler(campaignService service.CampaignService) *campaignHandler {
 	return &campaignHandler{campaignService}
 }
 
@@ -31,7 +33,7 @@ func (h *campaignHandler) GetCampaigns(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
-	payload := campaign.FormatCampaignCollections(data)
+	payload := formatter.FormatCampaignCollections(data)
 
 	res := helper.APIresponse("OK", http.StatusOK, "success", payload, nil)
 
@@ -39,7 +41,7 @@ func (h *campaignHandler) GetCampaigns(c *gin.Context) {
 }
 
 func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
-	var input campaign.GetCampaignByIDInput
+	var input request.GetCampaignByIDInput
 	err := ctx.ShouldBindUri(&input)
 
 	if err != nil {
@@ -55,13 +57,13 @@ func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 		return
 	}
-	formatted := campaign.FormatCampaignDetail(data)
+	formatted := formatter.FormatCampaignDetail(data)
 	payload := helper.APIresponse("OK", http.StatusOK, "success", formatted, nil)
 	ctx.JSON(http.StatusOK, payload)
 }
 
 func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
-	var input campaign.CreateCampaignInput
+	var input request.CreateCampaignInput
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errors := helper.FormatErrorValidation(err)
@@ -69,7 +71,7 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	curUser := c.MustGet("current_user").(user.User)
+	curUser := c.MustGet("current_user").(model.User)
 	input.User = curUser
 
 	data, err := h.campaignService.CreateCampaign(input)
@@ -78,14 +80,14 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	formattedCampaign := campaign.FormatCampaignDetail(data)
+	formattedCampaign := formatter.FormatCampaignDetail(data)
 	res := helper.APIresponse("CREATED", http.StatusCreated, "success", formattedCampaign, nil)
 	c.JSON(http.StatusCreated, res)
 }
 
 func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
-	var input campaign.UpdateCampaignInput
-	var campaignID campaign.GetCampaignByIDInput
+	var input request.UpdateCampaignInput
+	var campaignID request.GetCampaignByIDInput
 
 	err := ctx.ShouldBindUri(&campaignID)
 
@@ -104,7 +106,7 @@ func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
-	curUser := ctx.MustGet("current_user").(user.User)
+	curUser := ctx.MustGet("current_user").(model.User)
 	input.User = curUser
 
 	data, err := h.campaignService.UpdateCampaign(campaignID, input)
@@ -115,14 +117,14 @@ func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
 		return
 	}
 
-	formattedCampaign := campaign.FormatCampaignDetail(data)
+	formattedCampaign := formatter.FormatCampaignDetail(data)
 	res := helper.APIresponse("OK", http.StatusOK, "success", formattedCampaign, nil)
 
 	ctx.JSON(http.StatusOK, res)
 }
 
 func (h *campaignHandler) UploadCampaignImage(ctx *gin.Context) {
-	var input campaign.UploadCampaignImageInput
+	var input request.UploadCampaignImageInput
 	err := ctx.ShouldBind(&input)
 
 	if err != nil {
@@ -131,7 +133,7 @@ func (h *campaignHandler) UploadCampaignImage(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
-	input.User = ctx.MustGet("current_user").(user.User)
+	input.User = ctx.MustGet("current_user").(model.User)
 
 	imageFile, err := ctx.FormFile("campaign_image")
 

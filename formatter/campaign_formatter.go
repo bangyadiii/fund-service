@@ -1,4 +1,6 @@
-package campaign
+package formatter
+
+import "backend-crowdfunding/src/model"
 
 type CampaignFormatter struct {
 	ID               uint   `json:"id"`
@@ -12,7 +14,7 @@ type CampaignFormatter struct {
 	UserID           uint   `json:"user_id"`
 }
 
-func FormatCampaignCollections(campaigns []Campaign) []CampaignFormatter {
+func FormatCampaignCollections(campaigns []model.Campaign) []CampaignFormatter {
 	var campaignsFormatted []CampaignFormatter
 
 	for _, data := range campaigns {
@@ -23,7 +25,7 @@ func FormatCampaignCollections(campaigns []Campaign) []CampaignFormatter {
 	return campaignsFormatted
 }
 
-func FormatCampaign(campaign Campaign) CampaignFormatter {
+func FormatCampaign(campaign model.Campaign) CampaignFormatter {
 	formatted := CampaignFormatter{}
 
 	formatted.ID = campaign.ID
@@ -42,20 +44,20 @@ func FormatCampaign(campaign Campaign) CampaignFormatter {
 }
 
 type CampaignDetailFormatter struct {
-	ID               uint            `json:"id"`
-	UserID           uint            `json:"user_id"`
-	Name             string          `json:"name"`
-	ShortDescription string          `json:"short_description"`
-	Description      string          `json:"description"`
-	Perks            string          `json:"perks"`
-	BackerCount      int             `json:"backer_count"`
-	GoalAmount       int             `json:"goal_amount"`
-	CurrentAmount    int             `json:"current_amount"`
-	Slug             string          `json:"slug"`
-	CampaignImages   []CampaignImage `json:"campaign_images"`
+	ID               uint                  `json:"id"`
+	UserID           uint                  `json:"user_id"`
+	Name             string                `json:"name"`
+	ShortDescription string                `json:"short_description"`
+	Description      string                `json:"description"`
+	Perks            string                `json:"perks"`
+	BackerCount      int                   `json:"backer_count"`
+	GoalAmount       int                   `json:"goal_amount"`
+	CurrentAmount    int                   `json:"current_amount"`
+	Slug             string                `json:"slug"`
+	CampaignImages   []model.CampaignImage `json:"campaign_images"`
 }
 
-func FormatCampaignDetail(campaign Campaign) CampaignDetailFormatter {
+func FormatCampaignDetail(campaign model.Campaign) CampaignDetailFormatter {
 	formatted := CampaignDetailFormatter{
 		ID:               campaign.ID,
 		Name:             campaign.Name,

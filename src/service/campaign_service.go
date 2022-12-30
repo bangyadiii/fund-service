@@ -1,6 +1,9 @@
-package campaign
+package service
 
 import (
+	"backend-crowdfunding/src/model"
+	"backend-crowdfunding/src/repository"
+	"backend-crowdfunding/src/request"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -8,23 +11,23 @@ import (
 	"github.com/gosimple/slug"
 )
 
-type Service interface {
-	GetCampaigns(userID uint) ([]Campaign, error)
-	CreateCampaign(input CreateCampaignInput) (Campaign, error)
-	GetCampaignByID(input GetCampaignByIDInput) (Campaign, error)
-	UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCampaignInput) (Campaign, error)
-	UploadCampaignImage(input UploadCampaignImageInput) (CampaignImage, error)
+type CampaignService interface {
+	GetCampaigns(userID uint) ([]model.Campaign, error)
+	CreateCampaign(input request.CreateCampaignInput) (model.Campaign, error)
+	GetCampaignByID(input request.GetCampaignByIDInput) (model.Campaign, error)
+	UpdateCampaign(campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error)
+	UploadCampaignImage(input request.UploadCampaignImageInput) (model.CampaignImage, error)
 }
 
-type service struct {
-	repository Repository
+type campaignService struct {
+	repository repository.CampaignRepository
 }
 
-func NewService(repository Repository) *service {
-	return &service{repository}
+func NewCampaignService(repository repository.CampaignRepository) *campaignService {
+	return &campaignService{repository}
 }
 
-func (s *service) GetCampaigns(userID uint) ([]Campaign, error) {
+func (s *campaignService) GetCampaigns(userID uint) ([]model.Campaign, error) {
 	if userID != 0 {
 		campaigns, err := s.repository.GetCampaignByUserID(userID)
 		if err != nil {
@@ -32,7 +35,7 @@ func (s *service) GetCampaigns(userID uint) ([]Campaign, error) {
 		}
 		return campaigns, nil
 	}
-	campaigns, err := s.repository.FindAll()
+	campaigns, err := s.repository.FindAllCampaign()
 	if err != nil {
 		return campaigns, err
 	}
@@ -41,7 +44,7 @@ func (s *service) GetCampaigns(userID uint) ([]Campaign, error) {
 
 }
 
-func (s *service) GetCampaignByID(input GetCampaignByIDInput) (Campaign, error) {
+func (s *campaignService) GetCampaignByID(input request.GetCampaignByIDInput) (model.Campaign, error) {
 	campaign, err := s.repository.GetCampaignByID(input.ID)
 
 	if err != nil {
@@ -51,8 +54,8 @@ func (s *service) GetCampaignByID(input GetCampaignByIDInput) (Campaign, error) 
 	return campaign, nil
 }
 
-func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
-	campaign := Campaign{}
+func (s *campaignService) CreateCampaign(input request.CreateCampaignInput) (model.Campaign, error) {
+	campaign := model.Campaign{}
 
 	campaign.Name = input.Name
 	campaign.UserID = input.User.ID
@@ -65,7 +68,7 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 	slugCandidate := fmt.Sprintf("%s %d%d", input.Name, input.User.ID, rand.Int())
 	campaign.Slug = slug.Make(slugCandidate)
 
-	newCampaign, err := s.repository.Create(campaign)
+	newCampaign, err := s.repository.CreateCampaign(campaign)
 
 	if err != nil {
 		return newCampaign, err
@@ -74,7 +77,7 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 	return newCampaign, nil
 }
 
-func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCampaignInput) (Campaign, error) {
+func (s *campaignService) UpdateCampaign(campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error) {
 	oldCampaign, err := s.repository.GetCampaignByID(campaignID.ID)
 	if err != nil {
 		return oldCampaign, err
@@ -91,7 +94,7 @@ func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCa
 	oldCampaign.GoalAmount = int(input.GoalAmount)
 	oldCampaign.Perks = input.Perks
 
-	data, err := s.repository.Update(oldCampaign)
+	data, err := s.repository.UpdateCampaign(oldCampaign)
 
 	if err != nil {
 		return data, err
@@ -101,8 +104,8 @@ func (s *service) UpdateCampaign(campaignID GetCampaignByIDInput, input UpdateCa
 
 }
 
-func (s *service) UploadCampaignImage(input UploadCampaignImageInput) (CampaignImage, error) {
-	var image CampaignImage
+func (s *campaignService) UploadCampaignImage(input request.UploadCampaignImageInput) (model.CampaignImage, error) {
+	var image model.CampaignImage
 	campaign, err := s.repository.GetCampaignByID(input.CampaignID)
 	if err != nil {
 		return image, err
@@ -125,7 +128,7 @@ func (s *service) UploadCampaignImage(input UploadCampaignImageInput) (CampaignI
 	image.CampaignID = input.CampaignID
 	image.ImageName = input.ImageName
 
-	campaignImage, err := s.repository.UploadImage(image)
+	campaignImage, err := s.repository.UploadImageCampaign(image)
 	if err != nil {
 		return campaignImage, err
 	}

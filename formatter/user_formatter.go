@@ -1,4 +1,6 @@
-package user
+package formatter
+
+import "backend-crowdfunding/src/model"
 
 type UserFormatter struct {
 	ID         uint   `json:"id"`
@@ -8,7 +10,7 @@ type UserFormatter struct {
 	Token      string `json:"token"`
 }
 
-func FormatUser(user User, token string) UserFormatter {
+func FormatUser(user model.User, token string) UserFormatter {
 	formatter := UserFormatter{
 		ID:         user.ID,
 		Name:       user.Name,

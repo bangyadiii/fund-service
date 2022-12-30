@@ -1,8 +1,6 @@
-package campaign
+package model
 
 import (
-	"backend-crowdfunding/transaction"
-	"backend-crowdfunding/user"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,9 +8,9 @@ import (
 
 type Campaign struct {
 	ID               uint `gorm:"primaryKey"`
-	User             user.User
+	User             User
 	UserID           uint
-	Transactions     []transaction.Transaction
+	Transactions     []Transaction
 	Name             string
 	ShortDescription string
 	Description      string

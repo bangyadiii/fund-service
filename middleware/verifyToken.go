@@ -1,9 +1,8 @@
 package middleware
 
 import (
-	"backend-crowdfunding/auth"
 	"backend-crowdfunding/helper"
-	"backend-crowdfunding/user"
+	"backend-crowdfunding/src/service"
 	"net/http"
 	"strings"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func VerifyToken(userService user.Service, authService auth.Service) gin.HandlerFunc {
+func VerifyToken(userService service.UserService, authService service.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// TODO mengecek request header dengan key Authorization
 		//  TODO mengecek, apakah value Authorization terdapat "Bearer" value
