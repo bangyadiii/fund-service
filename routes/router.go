@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"backend-crowdfunding/handler"
-	"backend-crowdfunding/middleware"
+	"backend-crowdfunding/src/handler"
+	"backend-crowdfunding/src/middleware"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/service"
 
