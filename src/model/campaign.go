@@ -7,9 +7,9 @@ import (
 )
 
 type Campaign struct {
-	ID               uint `gorm:"primaryKey"`
+	ID               string `gorm:"primaryKey"`
 	User             User
-	UserID           uint
+	UserID           string
 	Transactions     []Transaction
 	Name             string
 	ShortDescription string
@@ -26,8 +26,8 @@ type Campaign struct {
 }
 
 type CampaignImage struct {
-	ID         uint `gorm:"primaryKey"`
-	CampaignID uint
+	ID         string `gorm:"primaryKey"`
+	CampaignID string
 	ImageName  string
 	IsPrimary  bool
 	CreatedAt  time.Time

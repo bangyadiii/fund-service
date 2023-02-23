@@ -14,8 +14,8 @@ type UserService interface {
 	RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error)
 	Login(ctx context.Context, input request.LoginUserInput) (model.User, error)
 	IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error)
-	SaveAvatar(ctx context.Context, ID uint, file string) (model.User, error)
-	FindByID(ctx context.Context, ID uint) (model.User, error)
+	SaveAvatar(ctx context.Context, ID string, file string) (model.User, error)
+	FindByID(ctx context.Context, ID string) (model.User, error)
 }
 
 type userServiceImpl struct {
@@ -64,7 +64,7 @@ func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInpu
 	if err != nil {
 		return user, err
 	}
-	if user.ID == 0 {
+	if user.ID == "" {
 		return user, errors.New("there is no user with this email")
 	}
 
@@ -84,14 +84,14 @@ func (s *userServiceImpl) IsEmailAvailable(ctx context.Context, input request.Ch
 	if err != nil {
 		return false, err
 	}
-	if user.ID == 0 {
+	if user.ID == "" {
 		return true, nil
 	}
 
 	return false, nil
 }
 
-func (s *userServiceImpl) SaveAvatar(ctx context.Context, ID uint, fileName string) (model.User, error) {
+func (s *userServiceImpl) SaveAvatar(ctx context.Context, ID string, fileName string) (model.User, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
@@ -108,7 +108,7 @@ func (s *userServiceImpl) SaveAvatar(ctx context.Context, ID uint, fileName stri
 	return updatedUser, nil
 }
 
-func (s *userServiceImpl) FindByID(ctx context.Context, ID uint) (model.User, error) {
+func (s *userServiceImpl) FindByID(ctx context.Context, ID string) (model.User, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 

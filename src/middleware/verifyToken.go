@@ -11,11 +11,18 @@ import (
 )
 
 func VerifyToken(userService service.UserService, authService service.AuthService) gin.HandlerFunc {
+	/*
+		This code is used to authenticate a user and authorize them to access a certain endpoint.
+		It first checks if the Authorization header contains "Bearer". If not, it returns an error response.
+		It then splits the header into two parts and stores the token string in tokenString.
+		It then uses authService to validate the tokenString, and if there is an error, it returns an error response.
+		It then checks if the claims are valid and if not, it returns an error response.
+		Finally, it uses userService to find the user by ID and check if the email matches with what is stored in payload.
+		If all checks pass, it sets a current_user variable with the user object.
+	*/
+
 	return func(c *gin.Context) {
-		// TODO mengecek request header dengan key Authorization
-		//  TODO mengecek, apakah value Authorization terdapat "Bearer" value
-		// TODO split string dengan spasi (" ")
-		// TODO mengambil array index ke 2
+
 		bearerToken := c.Request.Header.Get("Authorization")
 
 		if !strings.Contains(bearerToken, "Bearer") {
@@ -41,7 +48,7 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
-		userID := uint(payload["_id"].(float64))
+		userID := payload["_id"].(string)
 		user, err := userService.FindByID(c.Request.Context(), userID)
 
 		if err != nil {

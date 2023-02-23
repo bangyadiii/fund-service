@@ -1,4 +1,4 @@
-package util
+package id
 
 type mockUlid struct {
 	GenerateFunc func() string

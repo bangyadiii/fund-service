@@ -6,6 +6,7 @@ import (
 	"backend-crowdfunding/src/handler"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/service"
+	"backend-crowdfunding/src/util/id"
 	"log"
 )
 
@@ -27,10 +28,10 @@ func main() {
 	m.RunMigration()
 
 	// setup id generator
-	// var IDGenerator = util.NewUlid()
+	var IDGenerator = id.NewUlid()
 
 	// setup repository
-	repo := repository.InitRepository(db)
+	repo := repository.InitRepository(db, IDGenerator)
 
 	// setup service
 	service := service.InitService(configuration, repo)

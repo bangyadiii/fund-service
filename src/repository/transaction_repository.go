@@ -3,6 +3,7 @@ package repository
 import (
 	"backend-crowdfunding/database"
 	model "backend-crowdfunding/src/model"
+	"backend-crowdfunding/src/util/id"
 )
 
 type TransactionRepository interface {
@@ -11,11 +12,15 @@ type TransactionRepository interface {
 }
 
 type trxRepoImpl struct {
-	db *database.DB
+	db          *database.DB
+	idGenerator id.IDGenerator
 }
 
-func NewTransactionRepository(db *database.DB) TransactionRepository {
-	return &trxRepoImpl{db}
+func NewTransactionRepository(db *database.DB, idGenerator id.IDGenerator) TransactionRepository {
+	return &trxRepoImpl{
+		db:          db,
+		idGenerator: idGenerator,
+	}
 }
 
 func (r *trxRepoImpl) GetTransactionByCampaignID(campaignID uint) ([]model.Transaction, error) {
@@ -30,6 +35,8 @@ func (r *trxRepoImpl) GetTransactionByCampaignID(campaignID uint) ([]model.Trans
 }
 
 func (r *trxRepoImpl) CreateTransaction(transaction model.Transaction) (model.Transaction, error) {
+	id := r.idGenerator.Generate()
+	transaction.ID = id
 	trx := r.db.Create(&transaction)
 	if trx.Error != nil {
 		return model.Transaction{}, trx.Error

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"backend-crowdfunding/config"
 	"errors"
 	"os"
 
@@ -8,18 +9,18 @@ import (
 )
 
 type AuthService interface {
-	GenerateToken(ID uint, email string) (string, error)
+	GenerateToken(ID string, email string) (string, error)
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
 type jwtServiceImpl struct {
-	//
+	configuration *config.Config
 }
 
 var secretKey string = os.Getenv("SECRET_KEY")
 var SECRET_KEY = []byte(secretKey)
 
-func (s *jwtServiceImpl) GenerateToken(ID uint, email string) (string, error) {
+func (s *jwtServiceImpl) GenerateToken(ID string, email string) (string, error) {
 	//JWT
 	//claim = payload
 	claim := jwt.MapClaims{}
@@ -52,6 +53,8 @@ func (s *jwtServiceImpl) ValidateToken(token string) (*jwt.Token, error) {
 	return decodedToken, nil
 }
 
-func NewAuthService() AuthService {
-	return &jwtServiceImpl{}
+func NewAuthService(cfg *config.Config) AuthService {
+	return &jwtServiceImpl{
+		configuration: cfg,
+	}
 }

@@ -15,7 +15,7 @@ type CreateCampaignInput struct {
 }
 
 type GetCampaignByIDInput struct {
-	ID uint `uri:"id" binding:"required"`
+	ID string `uri:"id" binding:"required"`
 }
 
 type UpdateCampaignInput struct {
@@ -30,8 +30,8 @@ type UpdateCampaignInput struct {
 }
 
 type UploadCampaignImageInput struct {
-	CampaignID uint `form:"campaign_id" binding:"required"`
-	IsPrimary  bool `form:"is_primary"`
+	CampaignID string `form:"campaign_id" binding:"required"`
+	IsPrimary  bool   `form:"is_primary"`
 	ImageName  string
 	User       model.User
 }

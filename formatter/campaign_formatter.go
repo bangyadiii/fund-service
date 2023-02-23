@@ -3,7 +3,7 @@ package formatter
 import "backend-crowdfunding/src/model"
 
 type CampaignFormatter struct {
-	ID               uint   `json:"id"`
+	ID               string `json:"id"`
 	Name             string `json:"name"`
 	ShortDescription string `json:"short_description"`
 	Description      string `json:"description"`
@@ -11,7 +11,7 @@ type CampaignFormatter struct {
 	ImageUrl         string `json:"image_url"`
 	GoalAmount       int    `json:"goal_amount"`
 	CurrentAmount    int    `json:"current_amount"`
-	UserID           uint   `json:"user_id"`
+	UserID           string `json:"user_id"`
 }
 
 func FormatCampaignCollections(campaigns []model.Campaign) []CampaignFormatter {
@@ -44,8 +44,8 @@ func FormatCampaign(campaign model.Campaign) CampaignFormatter {
 }
 
 type CampaignDetailFormatter struct {
-	ID               uint                  `json:"id"`
-	UserID           uint                  `json:"user_id"`
+	ID               string                `json:"id"`
+	UserID           string                `json:"user_id"`
 	Name             string                `json:"name"`
 	ShortDescription string                `json:"short_description"`
 	Description      string                `json:"description"`

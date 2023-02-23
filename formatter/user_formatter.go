@@ -3,7 +3,7 @@ package formatter
 import "backend-crowdfunding/src/model"
 
 type UserFormatter struct {
-	ID         uint   `json:"id"`
+	ID         string `json:"id"`
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 	Occupation string `json:"occupation"`

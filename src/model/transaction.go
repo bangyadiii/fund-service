@@ -7,9 +7,9 @@ import (
 )
 
 type Transaction struct {
-	ID         uint
-	CampaignID uint
-	UserID     uint
+	ID         string `grom:"primaryKey"`
+	CampaignID string
+	UserID     string
 	Amount     uint
 	Status     string
 	Code       string

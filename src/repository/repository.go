@@ -1,6 +1,9 @@
 package repository
 
-import "backend-crowdfunding/database"
+import (
+	"backend-crowdfunding/database"
+	"backend-crowdfunding/src/util/id"
+)
 
 type Repository struct {
 	CampaignRepo CampaignRepository
@@ -8,10 +11,10 @@ type Repository struct {
 	UserRepo     UserRepository
 }
 
-func InitRepository(db *database.DB) *Repository {
+func InitRepository(db *database.DB, idGenerator id.IDGenerator) *Repository {
 	return &Repository{
-		CampaignRepo: NewCampaignRepository(db),
-		TrxRepo:      NewTransactionRepository(db),
-		UserRepo:     NewUserRepository(db),
+		CampaignRepo: NewCampaignRepository(db, idGenerator),
+		TrxRepo:      NewTransactionRepository(db, idGenerator),
+		UserRepo:     NewUserRepository(db, idGenerator),
 	}
 }
