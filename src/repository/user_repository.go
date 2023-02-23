@@ -13,15 +13,15 @@ type UserRepository interface {
 	UpdateUser(ctx context.Context, user model.User) (model.User, error)
 }
 
-type userRepository struct {
+type userRepoImpl struct {
 	db *database.DB
 }
 
 func NewUserRepository(db *database.DB) UserRepository {
-	return &userRepository{db}
+	return &userRepoImpl{db}
 }
 
-func (r *userRepository) SaveUser(ctx context.Context, user model.User) (model.User, error) {
+func (r *userRepoImpl) SaveUser(ctx context.Context, user model.User) (model.User, error) {
 	data := r.db.WithContext(ctx).Create(&user)
 
 	if data.Error != nil {
@@ -30,7 +30,7 @@ func (r *userRepository) SaveUser(ctx context.Context, user model.User) (model.U
 	return user, nil
 }
 
-func (r *userRepository) FindByEmailUser(ctx context.Context, email string) (model.User, error) {
+func (r *userRepoImpl) FindByEmailUser(ctx context.Context, email string) (model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).Where("email = ?", email).Find(&user).Error
 
@@ -40,7 +40,7 @@ func (r *userRepository) FindByEmailUser(ctx context.Context, email string) (mod
 	return user, nil
 }
 
-func (r *userRepository) FindByIDUser(ctx context.Context, id uint) (model.User, error) {
+func (r *userRepoImpl) FindByIDUser(ctx context.Context, id uint) (model.User, error) {
 	var user model.User
 	err := r.db.WithContext(ctx).Where("id = ?", id).Find(&user).Error
 
@@ -50,7 +50,7 @@ func (r *userRepository) FindByIDUser(ctx context.Context, id uint) (model.User,
 	return user, nil
 }
 
-func (r *userRepository) UpdateUser(ctx context.Context, user model.User) (model.User, error) {
+func (r *userRepoImpl) UpdateUser(ctx context.Context, user model.User) (model.User, error) {
 	err := r.db.WithContext(ctx).Save(&user).Error
 
 	if err != nil {

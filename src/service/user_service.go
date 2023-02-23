@@ -4,11 +4,10 @@ import (
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/util/password"
 	"context"
 	"errors"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -40,12 +39,12 @@ func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.Regist
 	user.Email = input.Email
 	user.Avatar = input.Avatar
 	user.Occupation = input.Occupation
-	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
+	hash, err := password.HashPassword(input.Password)
 
 	if err != nil {
 		return user, err
 	}
-	user.Password = string(hash)
+	user.Password = hash
 
 	newUser, err := s.repository.SaveUser(context, user)
 
@@ -59,7 +58,7 @@ func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.Regist
 
 func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInput) (model.User, error) {
 	email := input.Email
-	password := input.Password
+	pwd := input.Password
 
 	user, err := s.repository.FindByEmailUser(ctx, email)
 	if err != nil {
@@ -68,10 +67,11 @@ func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInpu
 	if user.ID == 0 {
 		return user, errors.New("there is no user with this email")
 	}
-	err1 := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 
-	if err1 != nil {
-		return user, err1
+	err = password.ComparePassword(user.Password, pwd)
+
+	if err != nil {
+		return user, err
 	}
 
 	return user, nil
@@ -107,6 +107,7 @@ func (s *userServiceImpl) SaveAvatar(ctx context.Context, ID uint, fileName stri
 	}
 	return updatedUser, nil
 }
+
 func (s *userServiceImpl) FindByID(ctx context.Context, ID uint) (model.User, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
