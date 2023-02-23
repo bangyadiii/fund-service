@@ -151,7 +151,7 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 		return
 	}
 
-	path := fmt.Sprintf("assets/images/campaigns/%d-%d-%s", input.CampaignID, time.Now().Day(), imageFile.Filename)
+	path := fmt.Sprintf("assets/images/campaigns/%s-%d-%s", input.CampaignID, time.Now().Day(), imageFile.Filename)
 
 	err = ctx.SaveUploadedFile(imageFile, path)
 

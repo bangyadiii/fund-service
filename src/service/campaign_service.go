@@ -65,7 +65,7 @@ func (s *campaignServiceImpl) CreateCampaign(input request.CreateCampaignInput) 
 	campaign.BackerCount = int(input.BackerCount)
 	campaign.GoalAmount = int(input.GoalAmount)
 
-	slugCandidate := fmt.Sprintf("%s %d%d", input.Name, input.User.ID, rand.Int())
+	slugCandidate := fmt.Sprintf("%s %s%d", input.Name, input.User.ID, rand.Int())
 	campaign.Slug = slug.Make(slugCandidate)
 
 	newCampaign, err := s.repository.CreateCampaign(campaign)

@@ -163,7 +163,7 @@ func (r *rest) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	path := fmt.Sprintf("assets/images/avatars/%d-%d-%s", userID, file.Size, file.Filename)
+	path := fmt.Sprintf("assets/images/avatars/%s-%d-%s", userID, file.Size, file.Filename)
 	err = c.SaveUploadedFile(file, path)
 
 	if err != nil {
