@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,9 +31,8 @@ func NewCampaignHandler(campaignService service.CampaignService) *campaignHandle
 }
 
 func (r *rest) GetCampaigns(c *gin.Context) {
-	user_id, _ := strconv.ParseUint(c.Query("user_id"), 32, 64)
-	userID := uint(user_id)
-	data, err := r.service.Campaign.GetCampaigns(userID)
+	userID := c.Query("user_id")
+	data, err := r.service.Campaign.GetCampaigns(c.Request.Context(), userID)
 
 	if err != nil {
 		response := helper.APIresponse("Error occur while getting campaign", http.StatusBadRequest, "error", nil, err.Error())
@@ -58,7 +56,7 @@ func (h *rest) GetCampaignByID(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.service.Campaign.GetCampaignByID(input)
+	data, err := h.service.Campaign.GetCampaignByID(ctx.Request.Context(), input)
 
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())
@@ -82,7 +80,7 @@ func (r *rest) CreateNewCampaign(c *gin.Context) {
 	curUser := c.MustGet("current_user").(model.User)
 	input.User = curUser
 
-	data, err := r.service.Campaign.CreateCampaign(input)
+	data, err := r.service.Campaign.CreateCampaign(c.Request.Context(), input)
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, res)
@@ -117,7 +115,7 @@ func (r *rest) UpdateCampaign(ctx *gin.Context) {
 	curUser := ctx.MustGet("current_user").(model.User)
 	input.User = curUser
 
-	data, err := r.service.Campaign.UpdateCampaign(campaignID, input)
+	data, err := r.service.Campaign.UpdateCampaign(ctx.Request.Context(), campaignID, input)
 
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())
@@ -136,8 +134,8 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 	err := ctx.ShouldBind(&input)
 
 	if err != nil {
-		erros := helper.FormatErrorValidation(err)
-		res := helper.APIresponse("Bad Reqeust", http.StatusBadRequest, "error", nil, erros)
+		err := helper.FormatErrorValidation(err)
+		res := helper.APIresponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
@@ -165,7 +163,7 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 	}
 
 	input.ImageName = path
-	payload, err := r.service.Campaign.UploadCampaignImage(input)
+	payload, err := r.service.Campaign.UploadCampaignImage(ctx.Request.Context(), input)
 
 	if err != nil {
 		os.Remove(path)

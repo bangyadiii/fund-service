@@ -4,24 +4,32 @@ import (
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/request"
+	"context"
+	"time"
 )
 
 type TransactionService interface {
-	GetTransactionsByCampaignID(campaignID uint) ([]model.Transaction, error)
-	CreateTransaction(input request.CreateTransactionInput) (model.Transaction, error)
+	GetTransactionsByCampaignID(ctx context.Context, campaignID string) ([]model.Transaction, error)
+	CreateTransaction(ctx context.Context, input request.CreateTransactionInput) (model.Transaction, error)
 }
 
 type trxServiceImpl struct {
 	repository repository.TransactionRepository
+	timeout    time.Duration
 }
 
 func NewTransactionService(repository repository.TransactionRepository) TransactionService {
-	return &trxServiceImpl{repository: repository}
+	return &trxServiceImpl{
+		repository: repository,
+		timeout:    2 * time.Second,
+	}
 }
 
-func (s *trxServiceImpl) GetTransactionsByCampaignID(campaignID uint) ([]model.Transaction, error) {
+func (s *trxServiceImpl) GetTransactionsByCampaignID(ctx context.Context, campaignID string) ([]model.Transaction, error) {
+	c, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
 
-	data, err := s.repository.GetTransactionByCampaignID(campaignID)
+	data, err := s.repository.GetTransactionByCampaignID(c, campaignID)
 
 	if err != nil {
 		return data, err
@@ -30,7 +38,10 @@ func (s *trxServiceImpl) GetTransactionsByCampaignID(campaignID uint) ([]model.T
 	return data, nil
 }
 
-func (s *trxServiceImpl) CreateTransaction(input request.CreateTransactionInput) (model.Transaction, error) {
+func (s *trxServiceImpl) CreateTransaction(ctx context.Context, input request.CreateTransactionInput) (model.Transaction, error) {
+	c, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+
 	var trx model.Transaction
 
 	trx.CampaignID = input.CampaignID
@@ -39,7 +50,7 @@ func (s *trxServiceImpl) CreateTransaction(input request.CreateTransactionInput)
 	trx.Code = input.Code
 	trx.Status = input.Status
 
-	trx, err := s.repository.CreateTransaction(trx)
+	trx, err := s.repository.CreateTransaction(c, trx)
 	if err != nil {
 		return trx, err
 	}

@@ -6,7 +6,6 @@ import (
 	"backend-crowdfunding/src/request"
 	"backend-crowdfunding/src/service"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,16 +24,9 @@ func NewTransactionHandler(transactionService service.TransactionService) *trxHa
 }
 
 func (r *rest) GetAllTransactionsByCampaignID(ctx *gin.Context) {
-	ID64int, err := strconv.ParseUint(ctx.Query("campaign_id"), 32, 64)
-	campaignID := uint(ID64int)
+	campaignID := ctx.Query("campaign_id")
 
-	if err != nil {
-		res := helper.APIresponse("Bad Request", 400, "error", nil, err.Error())
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
-	}
-
-	campaign, err := r.service.Trx.GetTransactionsByCampaignID(campaignID)
+	campaign, err := r.service.Trx.GetTransactionsByCampaignID(ctx.Request.Context(), campaignID)
 	if err != nil {
 		res := helper.APIresponse("Bad Request", 400, "error", nil, err.Error())
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -59,7 +51,7 @@ func (r *rest) CreateTransaction(ctx *gin.Context) {
 
 	input.UserID = ctx.MustGet("current_user").(model.User).ID
 
-	trx, err := r.service.Trx.CreateTransaction(input)
+	trx, err := r.service.Trx.CreateTransaction(ctx.Request.Context(), input)
 	if err != nil {
 		res := helper.APIresponse("Bad Request", http.StatusBadRequest, "error", nil, err.Error())
 		ctx.JSON(http.StatusBadRequest, res)

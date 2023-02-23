@@ -4,38 +4,47 @@ import (
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/request"
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/gosimple/slug"
 )
 
 type CampaignService interface {
-	GetCampaigns(userID uint) ([]model.Campaign, error)
-	CreateCampaign(input request.CreateCampaignInput) (model.Campaign, error)
-	GetCampaignByID(input request.GetCampaignByIDInput) (model.Campaign, error)
-	UpdateCampaign(campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error)
-	UploadCampaignImage(input request.UploadCampaignImageInput) (model.CampaignImage, error)
+	GetCampaigns(c context.Context, userID string) ([]model.Campaign, error)
+	CreateCampaign(c context.Context, input request.CreateCampaignInput) (model.Campaign, error)
+	GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (model.Campaign, error)
+	UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error)
+	UploadCampaignImage(c context.Context, input request.UploadCampaignImageInput) (model.CampaignImage, error)
 }
 
 type campaignServiceImpl struct {
 	repository repository.CampaignRepository
+	timeout    time.Duration
 }
 
 func NewCampaignService(repository repository.CampaignRepository) CampaignService {
-	return &campaignServiceImpl{repository}
+	return &campaignServiceImpl{
+		repository: repository,
+		timeout:    2 * time.Second,
+	}
 }
 
-func (s *campaignServiceImpl) GetCampaigns(userID uint) ([]model.Campaign, error) {
-	if userID != 0 {
-		campaigns, err := s.repository.GetCampaignByUserID(userID)
+func (s *campaignServiceImpl) GetCampaigns(c context.Context, userID string) ([]model.Campaign, error) {
+	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
+
+	if userID != "" {
+		campaigns, err := s.repository.GetCampaignByUserID(ctx, userID)
 		if err != nil {
 			return campaigns, err
 		}
 		return campaigns, nil
 	}
-	campaigns, err := s.repository.FindAllCampaign()
+	campaigns, err := s.repository.FindAllCampaign(ctx)
 	if err != nil {
 		return campaigns, err
 	}
@@ -44,8 +53,11 @@ func (s *campaignServiceImpl) GetCampaigns(userID uint) ([]model.Campaign, error
 
 }
 
-func (s *campaignServiceImpl) GetCampaignByID(input request.GetCampaignByIDInput) (model.Campaign, error) {
-	campaign, err := s.repository.GetCampaignByID(input.ID)
+func (s *campaignServiceImpl) GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (model.Campaign, error) {
+	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
+
+	campaign, err := s.repository.GetCampaignByID(ctx, input.ID)
 
 	if err != nil {
 		return campaign, err
@@ -54,7 +66,10 @@ func (s *campaignServiceImpl) GetCampaignByID(input request.GetCampaignByIDInput
 	return campaign, nil
 }
 
-func (s *campaignServiceImpl) CreateCampaign(input request.CreateCampaignInput) (model.Campaign, error) {
+func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.CreateCampaignInput) (model.Campaign, error) {
+	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
+
 	campaign := model.Campaign{}
 
 	campaign.Name = input.Name
@@ -65,10 +80,10 @@ func (s *campaignServiceImpl) CreateCampaign(input request.CreateCampaignInput) 
 	campaign.BackerCount = int(input.BackerCount)
 	campaign.GoalAmount = int(input.GoalAmount)
 
-	slugCandidate := fmt.Sprintf("%s %s%d", input.Name, input.User.ID, rand.Int())
+	slugCandidate := fmt.Sprintf("%s %d", input.Name, rand.Int())
 	campaign.Slug = slug.Make(slugCandidate)
 
-	newCampaign, err := s.repository.CreateCampaign(campaign)
+	newCampaign, err := s.repository.CreateCampaign(ctx, campaign)
 
 	if err != nil {
 		return newCampaign, err
@@ -77,8 +92,11 @@ func (s *campaignServiceImpl) CreateCampaign(input request.CreateCampaignInput) 
 	return newCampaign, nil
 }
 
-func (s *campaignServiceImpl) UpdateCampaign(campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error) {
-	oldCampaign, err := s.repository.GetCampaignByID(campaignID.ID)
+func (s *campaignServiceImpl) UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error) {
+	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
+
+	oldCampaign, err := s.repository.GetCampaignByID(ctx, campaignID.ID)
 	if err != nil {
 		return oldCampaign, err
 	}
@@ -94,7 +112,7 @@ func (s *campaignServiceImpl) UpdateCampaign(campaignID request.GetCampaignByIDI
 	oldCampaign.GoalAmount = int(input.GoalAmount)
 	oldCampaign.Perks = input.Perks
 
-	data, err := s.repository.UpdateCampaign(oldCampaign)
+	data, err := s.repository.UpdateCampaign(ctx, oldCampaign)
 
 	if err != nil {
 		return data, err
@@ -104,9 +122,12 @@ func (s *campaignServiceImpl) UpdateCampaign(campaignID request.GetCampaignByIDI
 
 }
 
-func (s *campaignServiceImpl) UploadCampaignImage(input request.UploadCampaignImageInput) (model.CampaignImage, error) {
+func (s *campaignServiceImpl) UploadCampaignImage(c context.Context, input request.UploadCampaignImageInput) (model.CampaignImage, error) {
+	ctx, cancel := context.WithTimeout(c, s.timeout)
+	defer cancel()
+
 	var image model.CampaignImage
-	campaign, err := s.repository.GetCampaignByID(input.CampaignID)
+	campaign, err := s.repository.GetCampaignByID(ctx, input.CampaignID)
 	if err != nil {
 		return image, err
 	}
@@ -116,7 +137,7 @@ func (s *campaignServiceImpl) UploadCampaignImage(input request.UploadCampaignIm
 	}
 
 	if input.IsPrimary {
-		_, err := s.repository.MarkAllImagesAsNonPrimary(input.CampaignID)
+		_, err := s.repository.MarkAllImagesAsNonPrimary(ctx, input.CampaignID)
 
 		if err != nil {
 			return image, err
@@ -128,7 +149,7 @@ func (s *campaignServiceImpl) UploadCampaignImage(input request.UploadCampaignIm
 	image.CampaignID = input.CampaignID
 	image.ImageName = input.ImageName
 
-	campaignImage, err := s.repository.UploadImageCampaign(image)
+	campaignImage, err := s.repository.UploadImageCampaign(ctx, image)
 	if err != nil {
 		return campaignImage, err
 	}

@@ -20,8 +20,6 @@ func main() {
 		log.Fatalf("error when connect to db, %v", err)
 	}
 
-	// router := routes.GetRouter(db)
-
 	m := migrations.Migration{DB: db}
 
 	// run migration
@@ -38,15 +36,6 @@ func main() {
 
 	// init handler
 	rest := handler.Init(service, configuration)
+
 	rest.Run()
-
-	// setup Handler
-	// userHandler := handler.NewUserHanlder(service.User, service.Auth)
-	// campaignHandler := handler.NewCampaignHandler(service.Campaign)
-	// trxHandler := handler.NewTransactionHandler(service.Trx)
-
-	// appAddress := fmt.Sprintf("%s:%s", os.Getenv("APP_ADDRESS"), os.Getenv("PORT"))
-
-	// router.GinRouter.Static("/images", "./assets/images")
-	// router.GinRouter.Run(appAddress)
 }

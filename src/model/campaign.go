@@ -26,7 +26,8 @@ type Campaign struct {
 }
 
 type CampaignImage struct {
-	ID         string `gorm:"primaryKey"`
+	ID         string   `gorm:"primaryKey"`
+	Campaign   Campaign `gorm:"foreignKey:CampaignID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	CampaignID string
 	ImageName  string
 	IsPrimary  bool

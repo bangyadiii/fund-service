@@ -8,6 +8,8 @@ import (
 	"backend-crowdfunding/src/service"
 	"fmt"
 	"net/http"
+	"path"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -163,8 +165,8 @@ func (r *rest) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	path := fmt.Sprintf("assets/images/avatars/%s-%d-%s", userID, file.Size, file.Filename)
-	err = c.SaveUploadedFile(file, path)
+	filePath := fmt.Sprintf("assets/images/avatars/%s-%d%s", userID, time.Now().Unix(), path.Ext(file.Filename))
+	err = c.SaveUploadedFile(file, filePath)
 
 	if err != nil {
 		data := gin.H{
@@ -175,7 +177,7 @@ func (r *rest) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	_, err = r.service.User.SaveAvatar(c.Request.Context(), userID, path)
+	_, err = r.service.User.SaveAvatar(c.Request.Context(), userID, filePath)
 	if err != nil {
 		data := gin.H{
 			"is_uploaded": false,

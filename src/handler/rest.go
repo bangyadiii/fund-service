@@ -19,17 +19,18 @@ var once = sync.Once{}
 
 type rest struct {
 	http    *gin.Engine
-	service service.Service
+	service *service.Service
 	cfg     config.Config
 }
 
 func Init(s *service.Service, cfg config.Config) *rest {
 	r := &rest{}
 	once.Do(func() {
-		gin.SetMode(gin.ReleaseMode) // TODO: Move to config later
+		gin.SetMode(gin.DebugMode) // TODO: Move to config later
 
-		r.http = gin.New()
+		r.http = gin.Default()
 		r.cfg = cfg
+		r.service = s
 
 		r.RegisterMiddlewareAndRoutes()
 	})
@@ -42,7 +43,7 @@ func (r *rest) RegisterMiddlewareAndRoutes() {
 
 	// auth router group
 	api := r.http.Group("api/v1")
-	authApi := r.http.Group("/auth")
+	authApi := api.Group("/auth")
 	authApi.POST("/email-is-available", r.CheckIsEmailAvailable)
 	authApi.POST("/register", r.RegisterUser)
 	authApi.POST("/login", r.Login)
@@ -59,7 +60,7 @@ func (r *rest) RegisterMiddlewareAndRoutes() {
 	campaignRoute.GET("/", r.GetCampaigns)
 	campaignRoute.POST("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateNewCampaign)
 
-	trxRoutes := api.Group("/model.Transactions")
+	trxRoutes := api.Group("/transactions")
 	trxRoutes.GET("/", r.GetAllTransactionsByCampaignID)
 	trxRoutes.POST("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateTransaction)
 }
@@ -92,6 +93,7 @@ func (r *rest) Run() {
 	}()
 
 	log.Printf("Server is running at %s", port)
+
 	<-ctx.Done()
 	stop()
 	log.Println("Shutting down server")
