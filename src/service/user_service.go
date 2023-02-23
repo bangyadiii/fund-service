@@ -19,19 +19,19 @@ type UserService interface {
 	FindByID(ctx context.Context, ID uint) (model.User, error)
 }
 
-type userService struct {
+type userServiceImpl struct {
 	repository repository.UserRepository
 	timeout    time.Duration
 }
 
 func NewUserService(r repository.UserRepository) UserService {
-	return &userService{
+	return &userServiceImpl{
 		repository: r,
 		timeout:    2 * time.Second,
 	}
 }
 
-func (s *userService) RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error) {
+func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error) {
 	context, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
@@ -57,7 +57,7 @@ func (s *userService) RegisterUser(ctx context.Context, input request.RegisterUs
 
 }
 
-func (s *userService) Login(ctx context.Context, input request.LoginUserInput) (model.User, error) {
+func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInput) (model.User, error) {
 	email := input.Email
 	password := input.Password
 
@@ -77,7 +77,7 @@ func (s *userService) Login(ctx context.Context, input request.LoginUserInput) (
 	return user, nil
 }
 
-func (s *userService) IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error) {
+func (s *userServiceImpl) IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error) {
 	email := input.Email
 
 	user, err := s.repository.FindByEmailUser(ctx, email)
@@ -91,7 +91,7 @@ func (s *userService) IsEmailAvailable(ctx context.Context, input request.CheckE
 	return false, nil
 }
 
-func (s *userService) SaveAvatar(ctx context.Context, ID uint, fileName string) (model.User, error) {
+func (s *userServiceImpl) SaveAvatar(ctx context.Context, ID uint, fileName string) (model.User, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
@@ -107,10 +107,10 @@ func (s *userService) SaveAvatar(ctx context.Context, ID uint, fileName string) 
 	}
 	return updatedUser, nil
 }
-func (s *userService) FindByID(ctx context.Context, ID uint) (model.User, error) {
+func (s *userServiceImpl) FindByID(ctx context.Context, ID uint) (model.User, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
-	
+
 	user, err := s.repository.FindByIDUser(c, ID)
 	if err != nil {
 		return user, err

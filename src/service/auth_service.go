@@ -12,14 +12,14 @@ type AuthService interface {
 	ValidateToken(token string) (*jwt.Token, error)
 }
 
-type jwtService struct {
+type jwtServiceImpl struct {
 	//
 }
 
 var secretKey string = os.Getenv("SECRET_KEY")
 var SECRET_KEY = []byte(secretKey)
 
-func (s *jwtService) GenerateToken(ID uint, email string) (string, error) {
+func (s *jwtServiceImpl) GenerateToken(ID uint, email string) (string, error) {
 	//JWT
 	//claim = payload
 	claim := jwt.MapClaims{}
@@ -35,7 +35,7 @@ func (s *jwtService) GenerateToken(ID uint, email string) (string, error) {
 	return signedToken, nil
 
 }
-func (s *jwtService) ValidateToken(token string) (*jwt.Token, error) {
+func (s *jwtServiceImpl) ValidateToken(token string) (*jwt.Token, error) {
 	//
 	decodedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
@@ -52,6 +52,6 @@ func (s *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	return decodedToken, nil
 }
 
-func NewAuthService() *jwtService {
-	return &jwtService{}
+func NewAuthService() AuthService {
+	return &jwtServiceImpl{}
 }

@@ -11,15 +11,15 @@ type TransactionService interface {
 	CreateTransaction(input request.CreateTransactionInput) (model.Transaction, error)
 }
 
-type trxService struct {
+type trxServiceImpl struct {
 	repository repository.TransactionRepository
 }
 
-func NewTransactionService(repository repository.TransactionRepository) *trxService {
-	return &trxService{repository: repository}
+func NewTransactionService(repository repository.TransactionRepository) TransactionService {
+	return &trxServiceImpl{repository: repository}
 }
 
-func (s *trxService) GetTransactionsByCampaignID(campaignID uint) ([]model.Transaction, error) {
+func (s *trxServiceImpl) GetTransactionsByCampaignID(campaignID uint) ([]model.Transaction, error) {
 
 	data, err := s.repository.GetTransactionByCampaignID(campaignID)
 
@@ -30,7 +30,7 @@ func (s *trxService) GetTransactionsByCampaignID(campaignID uint) ([]model.Trans
 	return data, nil
 }
 
-func (s *trxService) CreateTransaction(input request.CreateTransactionInput) (model.Transaction, error) {
+func (s *trxServiceImpl) CreateTransaction(input request.CreateTransactionInput) (model.Transaction, error) {
 	var trx model.Transaction
 
 	trx.CampaignID = input.CampaignID
