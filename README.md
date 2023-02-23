@@ -13,9 +13,7 @@ Fund is a crowdfunding platform that enables clients to post their projects in s
 
 -   Rename the `.env.example` file into `.env`.
 -   Fill the value in `.env` file based on your case.
--   Run
+-   Run http server
     ```bash
-    $ go run main.go
+    $ go run app/http/main.go
     ```
-
-to run golang development server
