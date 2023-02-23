@@ -1,9 +1,8 @@
 package repository
 
 import (
+	"backend-crowdfunding/database"
 	"backend-crowdfunding/src/model"
-
-	"gorm.io/gorm"
 )
 
 type CampaignRepository interface {
@@ -17,10 +16,10 @@ type CampaignRepository interface {
 }
 
 type campaignRepository struct {
-	db *gorm.DB
+	db *database.DB
 }
 
-func NewCampaignRepository(db *gorm.DB) *campaignRepository {
+func NewCampaignRepository(db *database.DB) *campaignRepository {
 	return &campaignRepository{db}
 }
 

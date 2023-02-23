@@ -1,36 +1,51 @@
 package main
 
 import (
-	"backend-crowdfunding/routes"
-	"backend-crowdfunding/src/model"
-	"fmt"
+	"backend-crowdfunding/config"
+	"backend-crowdfunding/database/migrations"
+	"backend-crowdfunding/src/handler"
+	"backend-crowdfunding/src/repository"
+	"backend-crowdfunding/src/service"
 	"log"
-	"os"
-
-	"github.com/joho/godotenv"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 func main() {
-	err := godotenv.Load()
+	// setup config
+	configuration := config.New(".env")
+
+	// init database
+	db, err := config.InitPostgreSQL(configuration)
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Fatalf("error when connect to db, %v", err)
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", os.Getenv("DATABASE_USER"), os.Getenv("DATABASE_PASSWORD"), os.Getenv("DATABASE_HOST"), os.Getenv("DATABASE_NAME"))
+	// router := routes.GetRouter(db)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	m := migrations.Migration{DB: db}
 
-	if err != nil {
-		log.Fatal("error : ", err.Error())
-	}
-	db.AutoMigrate(&model.User{}, &model.Campaign{}, &model.CampaignImage{}, &model.Transaction{})
+	// run migration
+	m.RunMigration()
 
-	router := routes.GetRouter(db)
+	// setup id generator
+	// var IDGenerator = util.NewUlid()
 
-	appAddress := fmt.Sprintf("%s:%s", os.Getenv("APP_ADDRESS"), os.Getenv("PORT"))
+	// setup repository
+	repo := repository.InitRepository(db)
 
-	router.GinRouter.Static("/images", "./assets/images")
-	router.GinRouter.Run(appAddress)
+	// setup service
+	service := service.InitService(configuration, repo)
+
+	// init handler
+	rest := handler.Init(service, configuration)
+	rest.Run()
+
+	// setup Handler
+	// userHandler := handler.NewUserHanlder(service.User, service.Auth)
+	// campaignHandler := handler.NewCampaignHandler(service.Campaign)
+	// trxHandler := handler.NewTransactionHandler(service.Trx)
+
+	// appAddress := fmt.Sprintf("%s:%s", os.Getenv("APP_ADDRESS"), os.Getenv("PORT"))
+
+	// router.GinRouter.Static("/images", "./assets/images")
+	// router.GinRouter.Run(appAddress)
 }

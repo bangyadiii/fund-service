@@ -4,28 +4,37 @@ import (
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/request"
+	"context"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
-	RegisterUser(input request.RegisterUserInput) (model.User, error)
-	Login(input request.LoginUserInput) (model.User, error)
-	IsEmailAvailable(input request.CheckEmailInput) (bool, error)
-	SaveAvatar(ID uint, file string) (model.User, error)
-	FindByID(ID uint) (model.User, error)
+	RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error)
+	Login(ctx context.Context, input request.LoginUserInput) (model.User, error)
+	IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error)
+	SaveAvatar(ctx context.Context, ID uint, file string) (model.User, error)
+	FindByID(ctx context.Context, ID uint) (model.User, error)
 }
 
 type userService struct {
 	repository repository.UserRepository
+	timeout    time.Duration
 }
 
 func NewUserService(r repository.UserRepository) UserService {
-	return &userService{r}
+	return &userService{
+		repository: r,
+		timeout:    2 * time.Second,
+	}
 }
 
-func (s *userService) RegisterUser(input request.RegisterUserInput) (model.User, error) {
+func (s *userService) RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error) {
+	context, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+
 	user := model.User{}
 	user.Name = input.Name
 	user.Email = input.Email
@@ -38,7 +47,7 @@ func (s *userService) RegisterUser(input request.RegisterUserInput) (model.User,
 	}
 	user.Password = string(hash)
 
-	newUser, err := s.repository.SaveUser(user)
+	newUser, err := s.repository.SaveUser(context, user)
 
 	if err != nil {
 		return newUser, err
@@ -48,11 +57,11 @@ func (s *userService) RegisterUser(input request.RegisterUserInput) (model.User,
 
 }
 
-func (s *userService) Login(input request.LoginUserInput) (model.User, error) {
+func (s *userService) Login(ctx context.Context, input request.LoginUserInput) (model.User, error) {
 	email := input.Email
 	password := input.Password
 
-	user, err := s.repository.FindByEmailUser(email)
+	user, err := s.repository.FindByEmailUser(ctx, email)
 	if err != nil {
 		return user, err
 	}
@@ -68,10 +77,10 @@ func (s *userService) Login(input request.LoginUserInput) (model.User, error) {
 	return user, nil
 }
 
-func (s *userService) IsEmailAvailable(input request.CheckEmailInput) (bool, error) {
+func (s *userService) IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error) {
 	email := input.Email
 
-	user, err := s.repository.FindByEmailUser(email)
+	user, err := s.repository.FindByEmailUser(ctx, email)
 	if err != nil {
 		return false, err
 	}
@@ -82,23 +91,27 @@ func (s *userService) IsEmailAvailable(input request.CheckEmailInput) (bool, err
 	return false, nil
 }
 
-func (s *userService) SaveAvatar(ID uint, fileName string) (model.User, error) {
+func (s *userService) SaveAvatar(ctx context.Context, ID uint, fileName string) (model.User, error) {
+	c, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
 
-	user, err := s.repository.FindByIDUser(ID)
+	user, err := s.repository.FindByIDUser(c, ID)
 	if err != nil {
 		return user, err
 	}
 	user.Avatar = fileName
 
-	updatedUser, err := s.repository.UpdateUser(user)
+	updatedUser, err := s.repository.UpdateUser(c, user)
 	if err != nil {
 		return updatedUser, err
 	}
 	return updatedUser, nil
 }
-func (s *userService) FindByID(ID uint) (model.User, error) {
-
-	user, err := s.repository.FindByIDUser(ID)
+func (s *userService) FindByID(ctx context.Context, ID uint) (model.User, error) {
+	c, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	
+	user, err := s.repository.FindByIDUser(c, ID)
 	if err != nil {
 		return user, err
 	}

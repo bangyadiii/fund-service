@@ -28,7 +28,7 @@ func NewUserHanlder(userService service.UserService, authService service.AuthSer
 	return &userHandler{userService, authService}
 }
 
-func (h *userHandler) RegisterUser(c *gin.Context) {
+func (r *rest) RegisterUser(c *gin.Context) {
 	var input request.RegisterUserInput
 
 	err := c.ShouldBindJSON(&input)
@@ -41,7 +41,7 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 	var checkEmailFormatInput request.CheckEmailInput
 	checkEmailFormatInput.Email = input.Email
 
-	isAvailableEmail, err := h.userService.IsEmailAvailable(checkEmailFormatInput)
+	isAvailableEmail, err := r.service.User.IsEmailAvailable(c.Request.Context(), checkEmailFormatInput)
 
 	if err != nil {
 		data := helper.APIresponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, err.Error())
@@ -55,13 +55,13 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	newUser, err := h.userService.RegisterUser(input)
+	newUser, err := r.service.User.RegisterUser(c.Request.Context(), input)
 	if err != nil {
 		data := helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
-	newToken, err := h.authService.GenerateToken(newUser.ID, newUser.Email)
+	newToken, err := r.service.Auth.GenerateToken(newUser.ID, newUser.Email)
 
 	if err != nil {
 		data := helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
@@ -81,7 +81,7 @@ func (h *userHandler) RegisterUser(c *gin.Context) {
 
 }
 
-func (h *userHandler) Login(c *gin.Context) {
+func (r *rest) Login(c *gin.Context) {
 	var input request.LoginUserInput
 	err := c.ShouldBindJSON(&input)
 
@@ -91,14 +91,14 @@ func (h *userHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, data)
 		return
 	}
-	validUser, err := h.userService.Login(input)
+	validUser, err := r.service.User.Login(c.Request.Context(), input)
 	if err != nil {
 
 		data := helper.APIresponse("Login failed", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
-	newToken, err := h.authService.GenerateToken(validUser.ID, validUser.Email)
+	newToken, err := r.service.Auth.GenerateToken(validUser.ID, validUser.Email)
 
 	if err != nil {
 		data := helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
@@ -112,7 +112,7 @@ func (h *userHandler) Login(c *gin.Context) {
 
 }
 
-func (h *userHandler) CheckIsEmailAvailable(c *gin.Context) {
+func (r *rest) CheckIsEmailAvailable(c *gin.Context) {
 	var input request.CheckEmailInput
 	err := c.ShouldBindJSON(&input)
 
@@ -122,7 +122,7 @@ func (h *userHandler) CheckIsEmailAvailable(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, data)
 		return
 	}
-	IsEmailAvailable, err := h.userService.IsEmailAvailable(input)
+	IsEmailAvailable, err := r.service.User.IsEmailAvailable(c.Request.Context(), input)
 	if err != nil {
 		errors := helper.FormatErrorValidation(err)
 		data := helper.APIresponse("Error", http.StatusBadRequest, "error", nil, errors)
@@ -148,7 +148,7 @@ func (h *userHandler) CheckIsEmailAvailable(c *gin.Context) {
 // TODO repo ambil data user ID 1
 // TODO repo update data user dengan data nama avatar/ lokasi file avatar
 
-func (h *userHandler) UploadAvatar(c *gin.Context) {
+func (r *rest) UploadAvatar(c *gin.Context) {
 
 	currentUser := c.MustGet("current_user").(model.User)
 	userID := currentUser.ID
@@ -175,7 +175,7 @@ func (h *userHandler) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	_, err = h.userService.SaveAvatar(userID, path)
+	_, err = r.service.User.SaveAvatar(c.Request.Context(), userID, path)
 	if err != nil {
 		data := gin.H{
 			"is_uploaded": false,

@@ -31,10 +31,10 @@ func NewCampaignHandler(campaignService service.CampaignService) *campaignHandle
 	return &campaignHandler{campaignService}
 }
 
-func (h *campaignHandler) GetCampaigns(c *gin.Context) {
+func (r *rest) GetCampaigns(c *gin.Context) {
 	user_id, _ := strconv.ParseUint(c.Query("user_id"), 32, 64)
 	userID := uint(user_id)
-	data, err := h.campaignService.GetCampaigns(userID)
+	data, err := r.service.Campaign.GetCampaigns(userID)
 
 	if err != nil {
 		response := helper.APIresponse("Error occur while getting campaign", http.StatusBadRequest, "error", nil, err.Error())
@@ -48,7 +48,7 @@ func (h *campaignHandler) GetCampaigns(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
+func (h *rest) GetCampaignByID(ctx *gin.Context) {
 	var input request.GetCampaignByIDInput
 	err := ctx.ShouldBindUri(&input)
 
@@ -58,7 +58,7 @@ func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.campaignService.GetCampaignByID(input)
+	data, err := h.service.Campaign.GetCampaignByID(input)
 
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())
@@ -70,7 +70,7 @@ func (h *campaignHandler) GetCampaignByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, payload)
 }
 
-func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
+func (r *rest) CreateNewCampaign(c *gin.Context) {
 	var input request.CreateCampaignInput
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
@@ -82,7 +82,7 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 	curUser := c.MustGet("current_user").(model.User)
 	input.User = curUser
 
-	data, err := h.campaignService.CreateCampaign(input)
+	data, err := r.service.Campaign.CreateCampaign(input)
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusBadRequest, "error", nil, err.Error())
 		c.JSON(http.StatusBadRequest, res)
@@ -93,7 +93,7 @@ func (h *campaignHandler) CreateNewCampaign(c *gin.Context) {
 	c.JSON(http.StatusCreated, res)
 }
 
-func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
+func (r *rest) UpdateCampaign(ctx *gin.Context) {
 	var input request.UpdateCampaignInput
 	var campaignID request.GetCampaignByIDInput
 
@@ -117,7 +117,7 @@ func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
 	curUser := ctx.MustGet("current_user").(model.User)
 	input.User = curUser
 
-	data, err := h.campaignService.UpdateCampaign(campaignID, input)
+	data, err := r.service.Campaign.UpdateCampaign(campaignID, input)
 
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())
@@ -131,7 +131,7 @@ func (h *campaignHandler) UpdateCampaign(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-func (h *campaignHandler) UploadCampaignImage(ctx *gin.Context) {
+func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 	var input request.UploadCampaignImageInput
 	err := ctx.ShouldBind(&input)
 
@@ -165,7 +165,7 @@ func (h *campaignHandler) UploadCampaignImage(ctx *gin.Context) {
 	}
 
 	input.ImageName = path
-	payload, err := h.campaignService.UploadCampaignImage(input)
+	payload, err := r.service.Campaign.UploadCampaignImage(input)
 
 	if err != nil {
 		os.Remove(path)

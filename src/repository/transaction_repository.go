@@ -1,9 +1,8 @@
 package repository
 
 import (
+	"backend-crowdfunding/database"
 	model "backend-crowdfunding/src/model"
-
-	"gorm.io/gorm"
 )
 
 type TransactionRepository interface {
@@ -12,10 +11,10 @@ type TransactionRepository interface {
 }
 
 type transactionRepository struct {
-	db *gorm.DB
+	db *database.DB
 }
 
-func NewTransactionRepository(db *gorm.DB) *transactionRepository {
+func NewTransactionRepository(db *database.DB) *transactionRepository {
 	return &transactionRepository{db}
 }
 

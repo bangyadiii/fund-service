@@ -42,7 +42,7 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 			return
 		}
 		userID := uint(payload["_id"].(float64))
-		user, err := userService.FindByID(userID)
+		user, err := userService.FindByID(c.Request.Context(), userID)
 
 		if err != nil {
 			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")

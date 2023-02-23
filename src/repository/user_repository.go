@@ -1,28 +1,28 @@
 package repository
 
 import (
+	"backend-crowdfunding/database"
 	"backend-crowdfunding/src/model"
-
-	"gorm.io/gorm"
+	"context"
 )
 
 type UserRepository interface {
-	FindByEmailUser(email string) (model.User, error)
-	FindByIDUser(id uint) (model.User, error)
-	SaveUser(user model.User) (model.User, error)
-	UpdateUser(user model.User) (model.User, error)
+	FindByEmailUser(ctx context.Context, email string) (model.User, error)
+	FindByIDUser(ctx context.Context, id uint) (model.User, error)
+	SaveUser(ctx context.Context, user model.User) (model.User, error)
+	UpdateUser(ctx context.Context, user model.User) (model.User, error)
 }
 
 type userRepository struct {
-	db *gorm.DB
+	db *database.DB
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
+func NewUserRepository(db *database.DB) UserRepository {
 	return &userRepository{db}
 }
 
-func (r *userRepository) SaveUser(user model.User) (model.User, error) {
-	data := r.db.Create(&user)
+func (r *userRepository) SaveUser(ctx context.Context, user model.User) (model.User, error) {
+	data := r.db.WithContext(ctx).Create(&user)
 
 	if data.Error != nil {
 		return user, data.Error
@@ -30,9 +30,9 @@ func (r *userRepository) SaveUser(user model.User) (model.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) FindByEmailUser(email string) (model.User, error) {
+func (r *userRepository) FindByEmailUser(ctx context.Context, email string) (model.User, error) {
 	var user model.User
-	err := r.db.Where("email = ?", email).Find(&user).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).Find(&user).Error
 
 	if err != nil {
 		return user, err
@@ -40,9 +40,9 @@ func (r *userRepository) FindByEmailUser(email string) (model.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) FindByIDUser(id uint) (model.User, error) {
+func (r *userRepository) FindByIDUser(ctx context.Context, id uint) (model.User, error) {
 	var user model.User
-	err := r.db.Where("id = ?", id).Find(&user).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).Find(&user).Error
 
 	if err != nil {
 		return user, err
@@ -50,8 +50,8 @@ func (r *userRepository) FindByIDUser(id uint) (model.User, error) {
 	return user, nil
 }
 
-func (r *userRepository) UpdateUser(user model.User) (model.User, error) {
-	err := r.db.Save(&user).Error
+func (r *userRepository) UpdateUser(ctx context.Context, user model.User) (model.User, error) {
+	err := r.db.WithContext(ctx).Save(&user).Error
 
 	if err != nil {
 		return user, err
