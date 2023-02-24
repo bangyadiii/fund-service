@@ -2,7 +2,7 @@ package repository
 
 import (
 	"backend-crowdfunding/database"
-	"backend-crowdfunding/src/util/id"
+	"backend-crowdfunding/sdk/id"
 )
 
 type Repository struct {

@@ -7,7 +7,7 @@ import (
 )
 
 type Transaction struct {
-	ID         string `grom:"primaryKey"`
+	ID         string `gorm:"primaryKey"`
 	CampaignID string
 	UserID     string
 	Amount     uint

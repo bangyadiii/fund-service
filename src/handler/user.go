@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"backend-crowdfunding/formatter"
 	"backend-crowdfunding/helper"
+	"backend-crowdfunding/src/formatter"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
 	"backend-crowdfunding/src/service"
@@ -142,13 +142,6 @@ func (r *rest) CheckIsEmailAvailable(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 
 }
-
-// TODO input dari user
-// TODO simpan gambarnya di folder /images/
-// TODO di service panggil repo untuk simpan nama gambar
-// TODO JWT (sementara hardcode, seakan2 user ID 1 yang akan upload avatar)
-// TODO repo ambil data user ID 1
-// TODO repo update data user dengan data nama avatar/ lokasi file avatar
 
 func (r *rest) UploadAvatar(c *gin.Context) {
 

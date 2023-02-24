@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"backend-crowdfunding/formatter"
 	"backend-crowdfunding/helper"
+	"backend-crowdfunding/src/formatter"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
 	"backend-crowdfunding/src/service"
@@ -46,7 +46,7 @@ func (r *rest) GetCampaigns(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-func (h *rest) GetCampaignByID(ctx *gin.Context) {
+func (r *rest) GetCampaignByID(ctx *gin.Context) {
 	var input request.GetCampaignByIDInput
 	err := ctx.ShouldBindUri(&input)
 
@@ -56,7 +56,7 @@ func (h *rest) GetCampaignByID(ctx *gin.Context) {
 		return
 	}
 
-	data, err := h.service.Campaign.GetCampaignByID(ctx.Request.Context(), input)
+	data, err := r.service.Campaign.GetCampaignByID(ctx.Request.Context(), input)
 
 	if err != nil {
 		res := helper.APIresponse("Something went wrong", http.StatusInternalServerError, "error", nil, err.Error())

@@ -3,7 +3,7 @@ package repository
 import (
 	"backend-crowdfunding/database"
 	model "backend-crowdfunding/src/model"
-	"backend-crowdfunding/src/util/id"
+	"backend-crowdfunding/sdk/id"
 	"context"
 )
 

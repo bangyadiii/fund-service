@@ -26,7 +26,7 @@ type rest struct {
 func Init(s *service.Service, cfg config.Config) *rest {
 	r := &rest{}
 	once.Do(func() {
-		gin.SetMode(gin.DebugMode) // TODO: Move to config later
+		gin.SetMode(cfg.Get("APP_MODE"))
 
 		r.http = gin.Default()
 		r.cfg = cfg
