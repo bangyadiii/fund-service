@@ -47,6 +47,7 @@ func (r *rest) RegisterMiddlewareAndRoutes() {
 	authApi.POST("/email-is-available", r.CheckIsEmailAvailable)
 	authApi.POST("/register", r.RegisterUser)
 	authApi.POST("/login", r.Login)
+	authApi.POST("/login/google", r.LoginWithGoogle)
 	authApi.POST("/avatars", middleware.VerifyToken(r.service.User, r.service.Auth), r.UploadAvatar)
 
 	// campaign router group

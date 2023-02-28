@@ -13,9 +13,10 @@ type Service struct {
 }
 
 func InitService(configuration config.Config, repo *repository.Repository) *Service {
+	authService := NewAuthService(&configuration)
 	return &Service{
-		Auth:     NewAuthService(&configuration),
-		User:     NewUserService(repo.UserRepo),
+		Auth:     authService,
+		User:     NewUserService(repo.UserRepo, authService),
 		Campaign: NewCampaignService(repo.CampaignRepo),
 		Trx:      NewTransactionService(repo.TrxRepo),
 	}

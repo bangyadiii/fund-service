@@ -17,3 +17,13 @@ type LoginUserInput struct {
 type CheckEmailInput struct {
 	Email string `json:"email" binding:"required,email"`
 }
+
+type LoginWithGoogleInput struct {
+	FirebaseToken string `json:"firebase_token" binding:"required"`
+}
+
+type UserParam struct {
+	Name            string `json:"name"`
+	Email           string `json:"email"`
+	IsGoogleAccount bool   `json:"is_google_account"`
+}

@@ -3,10 +3,11 @@ package main
 import (
 	"backend-crowdfunding/config"
 	"backend-crowdfunding/database/migrations"
+	"backend-crowdfunding/insfrastructure/firebase"
+	"backend-crowdfunding/sdk/id"
 	"backend-crowdfunding/src/handler"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/service"
-	"backend-crowdfunding/sdk/id"
 	"log"
 )
 
@@ -23,19 +24,25 @@ func main() {
 	m := migrations.Migration{DB: db}
 
 	// run migration
-	m.RunMigration()
+	err = m.RunMigration()
+	if err != nil {
+		log.Fatalf("Migration error, %v", err)
+		return
+	}
 
 	// setup id generator
 	var IDGenerator = id.NewUlid()
 
+	firebaseAuth := firebase.NewFirebase()
+
 	// setup repository
-	repo := repository.InitRepository(db, IDGenerator)
+	repo := repository.InitRepository(db, IDGenerator, firebaseAuth)
 
 	// setup service
-	service := service.InitService(configuration, repo)
+	svc := service.InitService(configuration, repo)
 
 	// init handler
-	rest := handler.Init(service, configuration)
+	rest := handler.Init(svc, configuration)
 
 	rest.Run()
 }

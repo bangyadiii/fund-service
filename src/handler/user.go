@@ -5,7 +5,6 @@ import (
 	"backend-crowdfunding/src/formatter"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
-	"backend-crowdfunding/src/service"
 	"fmt"
 	"net/http"
 	"path"
@@ -19,15 +18,6 @@ type UserHandler interface {
 	Login(c *gin.Context)
 	CheckIsEmailAvailable(c *gin.Context)
 	UploadAvatar(c *gin.Context)
-}
-
-type userHandler struct {
-	userService service.UserService
-	authService service.AuthService
-}
-
-func NewUserHanlder(userService service.UserService, authService service.AuthService) *userHandler {
-	return &userHandler{userService, authService}
 }
 
 func (r *rest) RegisterUser(c *gin.Context) {
@@ -70,7 +60,7 @@ func (r *rest) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, data)
 		return
 	}
-	formatedUser := formatter.FormatUser(newUser, newToken)
+	formatedUser := formatter.FormatUserLogin(newUser, newToken)
 
 	if err != nil {
 		data := helper.APIresponse("Register failed", http.StatusBadRequest, "error", nil, err.Error())
@@ -108,7 +98,7 @@ func (r *rest) Login(c *gin.Context) {
 		return
 	}
 
-	formatedUser := formatter.FormatUser(validUser, newToken)
+	formatedUser := formatter.FormatUserLogin(validUser, newToken)
 	data := helper.APIresponse("Login success", http.StatusOK, "success", formatedUser, nil)
 	c.JSON(http.StatusOK, data)
 
@@ -187,4 +177,22 @@ func (r *rest) UploadAvatar(c *gin.Context) {
 	response := helper.APIresponse("Avatar successfuly uploaded.", http.StatusOK, "success", data, nil)
 	c.JSON(http.StatusOK, response)
 
+}
+
+func (r *rest) LoginWithGoogle(c *gin.Context) {
+	var paramGoogle request.LoginWithGoogleInput
+	err := c.ShouldBindJSON(&paramGoogle)
+	if err != nil {
+		data := helper.APIresponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
+	userRes, err := r.service.User.LoginWithGoogle(c.Request.Context(), paramGoogle)
+	if err != nil {
+		response := helper.APIresponse("Failed to upload avatar 2", http.StatusBadRequest, "error", nil, err.Error())
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	res := helper.APIresponse("Login success", http.StatusOK, "success", userRes, nil)
+	c.JSON(http.StatusOK, res)
 }
