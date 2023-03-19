@@ -14,18 +14,17 @@ type TransactionHandler interface {
 	CreateTransaction(c *gin.Context)
 }
 
+// GetAllTransactionsByCampaignID A function that will be called when the user access the route `/transaction/campaign` with the method `GET`.
 func (r *rest) GetAllTransactionsByCampaignID(ctx *gin.Context) {
 	campaignID := ctx.Query("campaign_id")
 
-	campaign, err := r.service.Trx.GetTransactionsByCampaignID(ctx.Request.Context(), campaignID)
+	campaignResp, err := r.service.Trx.GetTransactionsByCampaignID(ctx.Request.Context(), campaignID)
 	if err != nil {
-		res := helper.APIresponse("Bad Request", 400, "error", nil, err.Error())
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
 
-	response := helper.APIresponse("OK", http.StatusOK, "success", campaign, nil)
-	ctx.JSON(http.StatusOK, response)
+	helper.SuccessResponse(ctx, http.StatusOK, "OK", campaignResp)
 }
 
 func (r *rest) CreateTransaction(ctx *gin.Context) {
@@ -34,9 +33,8 @@ func (r *rest) CreateTransaction(ctx *gin.Context) {
 	err := ctx.ShouldBindJSON(&input)
 
 	if err != nil {
-		erros := helper.FormatErrorValidation(err)
-		res := helper.APIresponse("Bad Request", http.StatusBadRequest, "error", nil, erros)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		errors := helper.FormatErrorValidation(err)
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errors)
 		return
 	}
 
@@ -44,12 +42,9 @@ func (r *rest) CreateTransaction(ctx *gin.Context) {
 
 	trx, err := r.service.Trx.CreateTransaction(ctx.Request.Context(), input)
 	if err != nil {
-		res := helper.APIresponse("Bad Request", http.StatusBadRequest, "error", nil, err.Error())
-		ctx.JSON(http.StatusBadRequest, res)
+		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
 
-	res := helper.APIresponse("Created", http.StatusCreated, "success", trx, nil)
-	ctx.JSON(http.StatusCreated, res)
-
+	helper.SuccessResponse(ctx, http.StatusCreated, "CREATED", trx)
 }

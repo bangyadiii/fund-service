@@ -1,8 +1,8 @@
-package formatter
+package response
 
 import "backend-crowdfunding/src/model"
 
-type CampaignFormatter struct {
+type CampaignResponse struct {
 	ID               string `json:"id"`
 	Name             string `json:"name"`
 	ShortDescription string `json:"short_description"`
@@ -14,8 +14,8 @@ type CampaignFormatter struct {
 	UserID           string `json:"user_id"`
 }
 
-func FormatCampaignCollections(campaigns []model.Campaign) []CampaignFormatter {
-	var campaignsFormatted []CampaignFormatter
+func FormatCampaignCollections(campaigns []model.Campaign) []CampaignResponse {
+	var campaignsFormatted []CampaignResponse
 
 	for _, data := range campaigns {
 		campaign := FormatCampaign(data)
@@ -25,8 +25,8 @@ func FormatCampaignCollections(campaigns []model.Campaign) []CampaignFormatter {
 	return campaignsFormatted
 }
 
-func FormatCampaign(campaign model.Campaign) CampaignFormatter {
-	formatted := CampaignFormatter{}
+func FormatCampaign(campaign model.Campaign) CampaignResponse {
+	formatted := CampaignResponse{}
 
 	formatted.ID = campaign.ID
 	formatted.Name = campaign.Name

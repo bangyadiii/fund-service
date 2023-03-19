@@ -26,7 +26,7 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 		bearerToken := c.Request.Header.Get("Authorization")
 
 		if !strings.Contains(bearerToken, "Bearer") {
-			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
@@ -37,14 +37,14 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 		}
 		accessToken, err := authService.ValidateToken(tokenString)
 		if err != nil {
-			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
 		payload, ok := accessToken.Claims.(jwt.MapClaims)
 
 		if !ok || !accessToken.Valid {
-			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, gin.H{"message": "Do not have permissions to access this resources"})
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, gin.H{"message": "Do not have permissions to access this resources"})
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}
@@ -52,14 +52,14 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 		user, err := userService.FindByID(c.Request.Context(), userID)
 
 		if err != nil {
-			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 
 		}
 
 		if user.Email != payload["email"] {
-			response := helper.APIresponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
+			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
 			return
 		}

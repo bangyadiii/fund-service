@@ -4,6 +4,7 @@ import (
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/response"
 	"context"
 	"errors"
 	"fmt"
@@ -14,10 +15,10 @@ import (
 )
 
 type CampaignService interface {
-	GetCampaigns(c context.Context, userID string) ([]model.Campaign, error)
-	CreateCampaign(c context.Context, input request.CreateCampaignInput) (model.Campaign, error)
-	GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (model.Campaign, error)
-	UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error)
+	GetCampaigns(c context.Context, userID string) ([]response.CampaignResponse, error)
+	CreateCampaign(c context.Context, input request.CreateCampaignInput) (response.CampaignResponse, error)
+	GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (response.CampaignDetailFormatter, error)
+	UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (response.CampaignResponse, error)
 	UploadCampaignImage(c context.Context, input request.UploadCampaignImageInput) (model.CampaignImage, error)
 }
 
@@ -33,42 +34,47 @@ func NewCampaignService(repository repository.CampaignRepository) CampaignServic
 	}
 }
 
-func (s *campaignServiceImpl) GetCampaigns(c context.Context, userID string) ([]model.Campaign, error) {
+func (s *campaignServiceImpl) GetCampaigns(c context.Context, userID string) ([]response.CampaignResponse, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
+
+	var campaignResponse []response.CampaignResponse
 
 	if userID != "" {
 		campaigns, err := s.repository.GetCampaignByUserID(ctx, userID)
 		if err != nil {
-			return campaigns, err
+			return campaignResponse, err
 		}
-		return campaigns, nil
+		return response.FormatCampaignCollections(campaigns), nil
 	}
 	campaigns, err := s.repository.FindAllCampaign(ctx)
 	if err != nil {
-		return campaigns, err
+		return campaignResponse, err
 	}
 
-	return campaigns, nil
+	return response.FormatCampaignCollections(campaigns), nil
 
 }
 
-func (s *campaignServiceImpl) GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (model.Campaign, error) {
+func (s *campaignServiceImpl) GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (response.CampaignDetailFormatter, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
+	var campaignRes response.CampaignDetailFormatter
 
 	campaign, err := s.repository.GetCampaignByID(ctx, input.ID)
 
 	if err != nil {
-		return campaign, err
+		return campaignRes, err
 	}
 
-	return campaign, nil
+	campaignRes = response.FormatCampaignDetail(campaign)
+	return campaignRes, nil
 }
 
-func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.CreateCampaignInput) (model.Campaign, error) {
+func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.CreateCampaignInput) (response.CampaignResponse, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
+	var campaignRes response.CampaignResponse
 
 	campaign := model.Campaign{}
 
@@ -86,23 +92,24 @@ func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.Cr
 	newCampaign, err := s.repository.CreateCampaign(ctx, campaign)
 
 	if err != nil {
-		return newCampaign, err
+		return campaignRes, err
 	}
 
-	return newCampaign, nil
+	return response.FormatCampaign(newCampaign), nil
 }
 
-func (s *campaignServiceImpl) UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (model.Campaign, error) {
+func (s *campaignServiceImpl) UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (response.CampaignResponse, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
+	var campaignRes response.CampaignResponse
 
 	oldCampaign, err := s.repository.GetCampaignByID(ctx, campaignID.ID)
 	if err != nil {
-		return oldCampaign, err
+		return campaignRes, err
 	}
 
 	if oldCampaign.UserID != input.User.ID {
-		return oldCampaign, errors.New("Unauthorized")
+		return campaignRes, errors.New("Unauthorized")
 	}
 
 	oldCampaign.Description = input.Description
@@ -115,10 +122,11 @@ func (s *campaignServiceImpl) UpdateCampaign(c context.Context, campaignID reque
 	data, err := s.repository.UpdateCampaign(ctx, oldCampaign)
 
 	if err != nil {
-		return data, err
+		return campaignRes, err
 	}
 
-	return data, nil
+	campaignRes = response.FormatCampaign(data)
+	return campaignRes, nil
 
 }
 

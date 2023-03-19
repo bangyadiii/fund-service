@@ -31,7 +31,7 @@ func NewCampaignRepository(db *database.DB, idGenerator id.IDGenerator) Campaign
 
 func (r *campaignRepoImpl) FindAllCampaign(c context.Context) ([]model.Campaign, error) {
 	var campaigns []model.Campaign
-	err := r.db.WithContext(c).Model(model.Campaign{}).Preload("CampaignImages", "campaign_images.is_primary = 1").Find(&campaigns).Error
+	err := r.db.WithContext(c).Model(model.Campaign{}).Preload("CampaignImages", "campaign_images.is_primary = true").Find(&campaigns).Error
 	if err != nil {
 		return campaigns, err
 	}

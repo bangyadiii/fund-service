@@ -2,10 +2,10 @@ package service
 
 import (
 	"backend-crowdfunding/sdk/password"
-	"backend-crowdfunding/src/formatter"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
 	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/response"
 	"context"
 	"errors"
 	"time"
@@ -13,11 +13,11 @@ import (
 
 type UserService interface {
 	RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error)
-	Login(ctx context.Context, input request.LoginUserInput) (model.User, error)
+	Login(ctx context.Context, input request.LoginUserInput) (response.UserLoginResponse, error)
 	IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error)
-	SaveAvatar(ctx context.Context, ID string, file string) (model.User, error)
-	FindByID(ctx context.Context, ID string) (model.User, error)
-	LoginWithGoogle(ctx context.Context, input request.LoginWithGoogleInput) (formatter.UserLoginFormatter, error)
+	SaveAvatar(ctx context.Context, ID string, fileName string) (model.User, error)
+	FindByID(ctx context.Context, ID string) (response.UserResponse, error)
+	LoginWithGoogle(ctx context.Context, input request.LoginWithGoogleInput) (response.UserLoginResponse, error)
 }
 
 type userServiceImpl struct {
@@ -26,6 +26,7 @@ type userServiceImpl struct {
 	timeout     time.Duration
 }
 
+// NewUserService is a function that takes a `UserRepository` and an `AuthService` and returns a `UserService`
 func NewUserService(r repository.UserRepository, authService AuthService) UserService {
 	return &userServiceImpl{
 		repository:  r,
@@ -60,37 +61,46 @@ func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.Regist
 
 }
 
-func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInput) (model.User, error) {
+// Login This function is used to login with email and password.
+func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInput) (response.UserLoginResponse, error) {
+	var loginResponse response.UserLoginResponse
+
 	email := input.Email
 	pwd := input.Password
 
 	user, err := s.repository.FindByEmailUser(ctx, email)
 	if err != nil {
-		return user, err
+		return loginResponse, err
 	}
 
 	if user.ID == "" {
-		return user, errors.New("there is no user with this email")
+		return loginResponse, errors.New("there is no user with this email")
 	}
 
 	if user.IsGoogleAccount {
-		return model.User{}, errors.New("this is google account")
+		return loginResponse, errors.New("this is google account")
 	}
 
 	err = password.ComparePassword(user.Password, pwd)
 
 	if err != nil {
-		return user, err
+		return loginResponse, err
 	}
+	newToken, err := s.authService.GenerateToken(user.ID, user.Email)
 
-	return user, nil
+	if err != nil {
+		return loginResponse, err
+	}
+	loginResponse = response.FormatUserLogin(&user, newToken)
+	return loginResponse, nil
 }
 
-func (s *userServiceImpl) LoginWithGoogle(ctx context.Context, input request.LoginWithGoogleInput) (formatter.UserLoginFormatter, error) {
+// LoginWithGoogle A function that is used to login with google account.
+func (s *userServiceImpl) LoginWithGoogle(ctx context.Context, input request.LoginWithGoogleInput) (response.UserLoginResponse, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
-	var userFormat formatter.UserLoginFormatter
+	var userFormat response.UserLoginResponse
 
 	firebaseToken, err := s.repository.VerifyFirebaseToken(c, input.FirebaseToken)
 	if err != nil {
@@ -103,6 +113,7 @@ func (s *userServiceImpl) LoginWithGoogle(ctx context.Context, input request.Log
 		Email:           email,
 		IsGoogleAccount: true,
 	})
+
 	if err != nil && err.Error() == "NOT_FOUND" {
 		user, err = s.registerFromGoogleAccount(c, request.RegisterUserInput{Email: email, Name: name})
 		if err != nil {
@@ -116,7 +127,7 @@ func (s *userServiceImpl) LoginWithGoogle(ctx context.Context, input request.Log
 	if err != nil {
 		return userFormat, err
 	}
-	userFormat = formatter.FormatUserLogin(user, token)
+	userFormat = response.FormatUserLogin(&user, token)
 	return userFormat, nil
 
 }
@@ -135,6 +146,7 @@ func (s userServiceImpl) registerFromGoogleAccount(ctx context.Context, param re
 	return user, nil
 }
 
+// IsEmailAvailable Checking if the email is available or not.
 func (s *userServiceImpl) IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error) {
 	email := input.Email
 
@@ -166,13 +178,16 @@ func (s *userServiceImpl) SaveAvatar(ctx context.Context, ID string, fileName st
 	return updatedUser, nil
 }
 
-func (s *userServiceImpl) FindByID(ctx context.Context, ID string) (model.User, error) {
+// FindByID A function that is used to find user by ID.
+func (s *userServiceImpl) FindByID(ctx context.Context, ID string) (response.UserResponse, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
+	var userRes response.UserResponse
 
 	user, err := s.repository.FindByIDUser(c, ID)
 	if err != nil {
-		return user, err
+		return userRes, err
 	}
-	return user, nil
+	userRes = response.FormatUserResponse(&user)
+	return userRes, nil
 }
