@@ -2,13 +2,16 @@ package repository
 
 import (
 	"backend-crowdfunding/database"
+	"backend-crowdfunding/sdk/errors"
 	"backend-crowdfunding/sdk/id"
 	"backend-crowdfunding/src/model"
+	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/response"
 	"context"
 )
 
 type CampaignRepository interface {
-	FindAllCampaign(c context.Context) ([]model.Campaign, error)
+	FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]model.Campaign, *response.PaginationParam, error)
 	GetCampaignByUserID(c context.Context, userID string) ([]model.Campaign, error)
 	CreateCampaign(c context.Context, campaign model.Campaign) (model.Campaign, error)
 	GetCampaignByID(c context.Context, ID string) (model.Campaign, error)
@@ -29,19 +32,42 @@ func NewCampaignRepository(db *database.DB, idGenerator id.IDGenerator) Campaign
 	}
 }
 
-func (r *campaignRepoImpl) FindAllCampaign(c context.Context) ([]model.Campaign, error) {
+func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]model.Campaign, *response.PaginationParam, error) {
 	var campaigns []model.Campaign
-	err := r.db.WithContext(c).Model(model.Campaign{}).Preload("CampaignImages", "campaign_images.is_primary = true").Find(&campaigns).Error
+	pg := response.FormatPaginationParam(params.PaginationParam)
+	err := r.db.WithContext(c).
+		Model(&campaigns).
+		Where(params).
+		Count(&pg.TotalElement).Error
+
 	if err != nil {
-		return campaigns, err
+		return campaigns, nil, err
 	}
 
-	return campaigns, nil
+	if ok := pg.ProcessPagination(); !ok {
+		return campaigns, nil, errors.NotFound("Campaigns")
+	}
+
+	err = r.db.WithContext(c).
+		Model(&campaigns).
+		Where(params).
+		Preload("CampaignImages", "campaign_images.is_primary = true").
+		Offset(int(pg.Offset)).
+		Limit(int(pg.Limit)).
+		Find(&campaigns).Error
+
+	if err != nil {
+		return campaigns, nil, err
+	}
+
+	return campaigns, pg, nil
 }
 
 func (r *campaignRepoImpl) GetCampaignByID(c context.Context, ID string) (model.Campaign, error) {
 	var campaigns model.Campaign = model.Campaign{ID: ID}
-	err := r.db.WithContext(c).Preload("CampaignImages").First(&campaigns).Error
+	err := r.db.WithContext(c).
+		Preload("CampaignImages").
+		First(&campaigns).Error
 
 	if err != nil {
 		return campaigns, err
@@ -52,7 +78,11 @@ func (r *campaignRepoImpl) GetCampaignByID(c context.Context, ID string) (model.
 
 func (r *campaignRepoImpl) GetCampaignByUserID(c context.Context, userID string) ([]model.Campaign, error) {
 	var campaigns []model.Campaign
-	err := r.db.WithContext(c).Where("user_id = ?", userID).Preload("CampaignImages", "campaign_images.is_primary = true").Find(&campaigns).Error
+	err := r.db.WithContext(c).
+		Where("user_id = ?", userID).
+		Preload("CampaignImages", "campaign_images.is_primary = true").
+		Find(&campaigns).Error
+
 	if err != nil {
 		return campaigns, err
 	}

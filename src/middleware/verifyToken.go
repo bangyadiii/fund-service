@@ -1,20 +1,18 @@
 package middleware
 
 import (
-	"backend-crowdfunding/helper"
+	"backend-crowdfunding/src/response"
 	"backend-crowdfunding/src/service"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 func VerifyToken(userService service.UserService, authService service.AuthService) gin.HandlerFunc {
 	/*
 		This code is used to authenticate a user and authorize them to access a certain endpoint.
 		It first checks if the Authorization header contains "Bearer". If not, it returns an error response.
-		It then splits the header into two parts and stores the token string in tokenString.
 		It then uses authService to validate the tokenString, and if there is an error, it returns an error response.
 		It then checks if the claims are valid and if not, it returns an error response.
 		Finally, it uses userService to find the user by ID and check if the email matches with what is stored in payload.
@@ -26,8 +24,8 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 		bearerToken := c.Request.Header.Get("Authorization")
 
 		if !strings.Contains(bearerToken, "Bearer") {
-			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			resp := response.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication. 1")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, resp)
 			return
 		}
 		splitBearer := strings.Split(bearerToken, " ")
@@ -37,30 +35,31 @@ func VerifyToken(userService service.UserService, authService service.AuthServic
 		}
 		accessToken, err := authService.ValidateToken(tokenString)
 		if err != nil {
-			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			resp := response.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, err.Error())
+			c.AbortWithStatusJSON(http.StatusUnauthorized, resp)
 			return
 		}
-		payload, ok := accessToken.Claims.(jwt.MapClaims)
+		payload, ok := authService.ConvertTokenToCustomClaims(accessToken)
 
 		if !ok || !accessToken.Valid {
-			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, gin.H{"message": "Do not have permissions to access this resources"})
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			resp := response.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, gin.H{"message": "Do not have permissions to access this resources"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, resp)
 			return
 		}
-		userID := payload["_id"].(string)
+
+		userID := payload.ID
 		user, err := userService.FindByID(c.Request.Context(), userID)
 
 		if err != nil {
-			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			resp := response.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, resp)
 			return
 
 		}
 
-		if user.Email != payload["email"] {
-			response := helper.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+		if user.Email != payload.Email {
+			resp := response.APIResponse("Unauthorized", http.StatusUnauthorized, "error", nil, "Cannot hit this endpoint with no authentication.")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, resp)
 			return
 		}
 		c.Set("current_user", user)

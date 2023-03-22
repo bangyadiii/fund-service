@@ -4,6 +4,7 @@ import (
 	"backend-crowdfunding/helper"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,11 +21,11 @@ func (r *rest) GetAllTransactionsByCampaignID(ctx *gin.Context) {
 
 	campaignResp, err := r.service.Trx.GetTransactionsByCampaignID(ctx.Request.Context(), campaignID)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
 
-	helper.SuccessResponse(ctx, http.StatusOK, "OK", campaignResp)
+	response.SuccessResponse(ctx, http.StatusOK, "OK", campaignResp)
 }
 
 func (r *rest) CreateTransaction(ctx *gin.Context) {
@@ -34,7 +35,7 @@ func (r *rest) CreateTransaction(ctx *gin.Context) {
 
 	if err != nil {
 		errors := helper.FormatErrorValidation(err)
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errors)
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errors)
 		return
 	}
 
@@ -42,9 +43,9 @@ func (r *rest) CreateTransaction(ctx *gin.Context) {
 
 	trx, err := r.service.Trx.CreateTransaction(ctx.Request.Context(), input)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
 
-	helper.SuccessResponse(ctx, http.StatusCreated, "CREATED", trx)
+	response.SuccessResponse(ctx, http.StatusCreated, "CREATED", trx)
 }

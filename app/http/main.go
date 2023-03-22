@@ -30,6 +30,9 @@ func main() {
 		return
 	}
 
+	//setup Redis
+	//redisIns := cache.Init(configuration)
+
 	// setup id generator
 	var IDGenerator = id.NewUlid()
 

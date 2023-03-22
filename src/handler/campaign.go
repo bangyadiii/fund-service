@@ -2,8 +2,8 @@ package handler
 
 import (
 	"backend-crowdfunding/helper"
-	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
+	"backend-crowdfunding/src/response"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,23 +13,29 @@ import (
 )
 
 type CampaignHandler interface {
-	GetCampaigns(c *gin.Context)
-	GetCampaignByID(c *gin.Context)
-	CreateNewCampaign(c *gin.Context)
-	UpdateCampaign(c *gin.Context)
-	UploadCampaignImage(c *gin.Context)
+	GetCampaigns(ctx *gin.Context)
+	GetCampaignByID(ctx *gin.Context)
+	CreateNewCampaign(ctx *gin.Context)
+	UpdateCampaign(ctx *gin.Context)
+	UploadCampaignImage(ctx *gin.Context)
 }
 
 // GetCampaigns A function that is used to get all campaigns.
 func (r *rest) GetCampaigns(ctx *gin.Context) {
-	userID := ctx.Query("user_id")
-	data, err := r.service.Campaign.GetCampaigns(ctx.Request.Context(), userID)
-
+	var param request.CampaignsWithPaginationParam
+	err := ctx.ShouldBindQuery(&param)
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
-	helper.SuccessResponse(ctx, http.StatusOK, "OK", data)
+
+	data, pg, err := r.service.Campaign.GetCampaigns(ctx.Request.Context(), param)
+
+	if err != nil {
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		return
+	}
+	response.SuccessResponseWithPagination(ctx, http.StatusOK, "OK", data, pg)
 }
 
 // GetCampaignByID A function that is used to get a campaign by ID.
@@ -38,37 +44,46 @@ func (r *rest) GetCampaignByID(ctx *gin.Context) {
 	err := ctx.ShouldBindUri(&input)
 
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
 
 	data, err := r.service.Campaign.GetCampaignByID(ctx.Request.Context(), input)
 
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
-	helper.SuccessResponse(ctx, http.StatusOK, "OK", data)
+	response.SuccessResponse(ctx, http.StatusOK, "OK", data)
 }
 
 // CreateNewCampaign A function that is used to create a new campaign.
-func (r *rest) CreateNewCampaign(c *gin.Context) {
+func (r *rest) CreateNewCampaign(ctx *gin.Context) {
 	var input request.CreateCampaignInput
-	err := c.ShouldBindJSON(&input)
+	err := ctx.ShouldBindJSON(&input)
 	if err != nil {
 		errorData := helper.FormatErrorValidation(err)
-		helper.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", errorData)
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
 		return
 	}
-	curUser := c.MustGet("current_user").(model.User)
-	input.User = curUser
+	userString, ok := ctx.Get("current_user")
+	if !ok {
+		response.ErrorResponse(ctx, http.StatusBadRequest, "Unautheticated", nil)
+	}
+	userResp, ok := userString.(response.UserResponse)
+	if !ok {
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+	}
 
-	campaignRes, err := r.service.Campaign.CreateCampaign(c.Request.Context(), input)
+	input.User.ID = userResp.ID
+	input.User.Email = userResp.Email
+
+	campaignRes, err := r.service.Campaign.CreateCampaign(ctx.Request.Context(), input)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
-	helper.SuccessResponse(c, http.StatusCreated, "CREATED", campaignRes)
+	response.SuccessResponse(ctx, http.StatusCreated, "CREATED", campaignRes)
 }
 
 // UpdateCampaign A function that is used to update a campaign.
@@ -80,7 +95,7 @@ func (r *rest) UpdateCampaign(ctx *gin.Context) {
 
 	if err != nil {
 		errorData := helper.FormatErrorValidation(err)
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
 		return
 	}
 
@@ -88,19 +103,29 @@ func (r *rest) UpdateCampaign(ctx *gin.Context) {
 
 	if err != nil {
 		errorData := helper.FormatErrorValidation(err)
-		helper.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
 		return
 	}
-	input.User = ctx.MustGet("current_user").(model.User)
+	userString, ok := ctx.Get("current_user")
+	if !ok {
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+	}
+	userResp, ok := userString.(response.UserResponse)
+	if !ok {
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+	}
+
+	input.User.ID = userResp.ID
+	input.User.Email = userResp.Email
 
 	data, err := r.service.Campaign.UpdateCampaign(ctx.Request.Context(), campaignID, input)
 
 	if err != nil {
-		helper.ErrorResponse(ctx, http.StatusInternalServerError, "Internal server error", err.Error())
+		response.ErrorResponse(ctx, http.StatusInternalServerError, "Internal server error", err.Error())
 		return
 	}
 
-	helper.SuccessResponse(ctx, http.StatusOK, "OK", data)
+	response.SuccessResponse(ctx, http.StatusOK, "OK", data)
 }
 
 func (r *rest) UploadCampaignImage(ctx *gin.Context) {
@@ -109,16 +134,22 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 
 	if err != nil {
 		err := helper.FormatErrorValidation(err)
-		res := helper.APIResponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
+		res := response.APIResponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
-	input.User = ctx.MustGet("current_user").(model.User)
+	userResp, ok := ctx.MustGet("current_user").(response.UserResponse)
+	if !ok {
+		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+	}
+
+	input.User.ID = userResp.ID
+	input.User.Email = userResp.Email
 
 	imageFile, err := ctx.FormFile("campaign_image")
 
 	if err != nil {
-		res := helper.APIResponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
+		res := response.APIResponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
@@ -131,8 +162,8 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 		data := gin.H{
 			"is_uploaded": false,
 		}
-		response := helper.APIResponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
-		ctx.JSON(http.StatusBadRequest, response)
+		apiResponse := response.APIResponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
+		ctx.JSON(http.StatusBadRequest, apiResponse)
 		return
 	}
 
@@ -147,10 +178,10 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 		data := gin.H{
 			"is_uploaded": false,
 		}
-		res := helper.APIResponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
+		res := response.APIResponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
 		ctx.JSON(http.StatusBadRequest, res)
 		return
 	}
 
-	helper.SuccessResponse(ctx, http.StatusOK, "OK", payload)
+	response.SuccessResponse(ctx, http.StatusOK, "OK", payload)
 }

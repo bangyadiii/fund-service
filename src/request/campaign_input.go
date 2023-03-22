@@ -2,6 +2,7 @@ package request
 
 import (
 	"backend-crowdfunding/src/model"
+	"backend-crowdfunding/src/response"
 )
 
 type CreateCampaignInput struct {
@@ -34,4 +35,10 @@ type UploadCampaignImageInput struct {
 	IsPrimary  bool   `form:"is_primary"`
 	ImageName  string
 	User       model.User
+}
+
+type CampaignsWithPaginationParam struct {
+	Name   string `json:"name,omitempty;query:name"`
+	UserID string `json:"user_id,omitempty"`
+	response.PaginationParam
 }

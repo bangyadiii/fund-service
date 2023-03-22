@@ -15,7 +15,7 @@ import (
 )
 
 type CampaignService interface {
-	GetCampaigns(c context.Context, userID string) ([]response.CampaignResponse, error)
+	GetCampaigns(c context.Context, params request.CampaignsWithPaginationParam) ([]response.CampaignResponse, *response.PaginationParam, error)
 	CreateCampaign(c context.Context, input request.CreateCampaignInput) (response.CampaignResponse, error)
 	GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (response.CampaignDetailFormatter, error)
 	UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (response.CampaignResponse, error)
@@ -34,25 +34,26 @@ func NewCampaignService(repository repository.CampaignRepository) CampaignServic
 	}
 }
 
-func (s *campaignServiceImpl) GetCampaigns(c context.Context, userID string) ([]response.CampaignResponse, error) {
+func (s *campaignServiceImpl) GetCampaigns(c context.Context, params request.CampaignsWithPaginationParam) ([]response.CampaignResponse, *response.PaginationParam, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
 
 	var campaignResponse []response.CampaignResponse
+	var pg *response.PaginationParam
 
-	if userID != "" {
-		campaigns, err := s.repository.GetCampaignByUserID(ctx, userID)
+	if params.UserID != "" {
+		campaigns, err := s.repository.GetCampaignByUserID(ctx, params.UserID)
 		if err != nil {
-			return campaignResponse, err
+			return campaignResponse, pg, err
 		}
-		return response.FormatCampaignCollections(campaigns), nil
+		return response.FormatCampaignCollections(campaigns), pg, nil
 	}
-	campaigns, err := s.repository.FindAllCampaign(ctx)
+	campaigns, pg, err := s.repository.FindAllCampaign(ctx, params)
 	if err != nil {
-		return campaignResponse, err
+		return campaignResponse, pg, err
 	}
 
-	return response.FormatCampaignCollections(campaigns), nil
+	return response.FormatCampaignCollections(campaigns), pg, nil
 
 }
 
