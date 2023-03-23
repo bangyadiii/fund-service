@@ -2,17 +2,21 @@ package repository
 
 import (
 	"backend-crowdfunding/database"
+	"backend-crowdfunding/insfrastructure/cache"
 	"backend-crowdfunding/sdk/errors"
 	"backend-crowdfunding/sdk/id"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
 	"backend-crowdfunding/src/response"
 	"context"
+	"encoding/json"
+	"fmt"
+	"strconv"
 )
 
 type CampaignRepository interface {
-	FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]model.Campaign, *response.PaginationParam, error)
-	GetCampaignByUserID(c context.Context, userID string) ([]model.Campaign, error)
+	FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]*model.Campaign, *response.PaginationParam, error)
+	GetCampaignByUserID(c context.Context, userID string) ([]*model.Campaign, error)
 	CreateCampaign(c context.Context, campaign model.Campaign) (model.Campaign, error)
 	GetCampaignByID(c context.Context, ID string) (model.Campaign, error)
 	UpdateCampaign(c context.Context, campaign model.Campaign) (model.Campaign, error)
@@ -22,44 +26,60 @@ type CampaignRepository interface {
 
 type campaignRepoImpl struct {
 	db          *database.DB
+	rd          cache.RedisClient
 	idGenerator id.IDGenerator
 }
 
-func NewCampaignRepository(db *database.DB, idGenerator id.IDGenerator) CampaignRepository {
+func NewCampaignRepository(db *database.DB, r cache.RedisClient, idGenerator id.IDGenerator) CampaignRepository {
 	return &campaignRepoImpl{
 		db:          db,
+		rd:          r,
 		idGenerator: idGenerator,
 	}
 }
 
-func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]model.Campaign, *response.PaginationParam, error) {
-	var campaigns []model.Campaign
+func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]*model.Campaign, *response.PaginationParam, error) {
+	var campaigns []*model.Campaign
 	pg := response.FormatPaginationParam(params.PaginationParam)
 	err := r.db.WithContext(c).
 		Model(&campaigns).
 		Where(params).
 		Count(&pg.TotalElement).Error
-
 	if err != nil {
 		return campaigns, nil, err
 	}
-
 	if ok := pg.ProcessPagination(); !ok {
 		return campaigns, nil, errors.NotFound("Campaigns")
 	}
 
-	err = r.db.WithContext(c).
-		Model(&campaigns).
-		Where(params).
-		Preload("CampaignImages", "campaign_images.is_primary = true").
-		Offset(int(pg.Offset)).
-		Limit(int(pg.Limit)).
-		Find(&campaigns).Error
+	key := "article:limit:" + strconv.Itoa(int(params.Limit)) + ":page:" + strconv.Itoa(int(params.Page))
+	fmt.Println(key)
+	// get data from the cache
+	data, err := r.rd.Get(c, key)
+	// if there are no data in cache, get data from DB
+	if err != nil {
+		err = r.db.WithContext(c).
+			Model(&campaigns).
+			Where(params).
+			Preload("CampaignImages", "campaign_images.is_primary = true").
+			Offset(int(pg.Offset)).
+			Limit(int(pg.Limit)).
+			Find(&campaigns).Error
 
+		if err != nil {
+			return campaigns, nil, err
+		}
+		err = r.rd.Set(c, key, campaigns)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return campaigns, pg, nil
+	}
+	err = json.Unmarshal([]byte(data), &campaigns)
 	if err != nil {
 		return campaigns, nil, err
 	}
-
 	return campaigns, pg, nil
 }
 
@@ -76,8 +96,8 @@ func (r *campaignRepoImpl) GetCampaignByID(c context.Context, ID string) (model.
 	return campaigns, nil
 }
 
-func (r *campaignRepoImpl) GetCampaignByUserID(c context.Context, userID string) ([]model.Campaign, error) {
-	var campaigns []model.Campaign
+func (r *campaignRepoImpl) GetCampaignByUserID(c context.Context, userID string) ([]*model.Campaign, error) {
+	var campaigns []*model.Campaign
 	err := r.db.WithContext(c).
 		Where("user_id = ?", userID).
 		Preload("CampaignImages", "campaign_images.is_primary = true").

@@ -35,13 +35,13 @@ func InitPostgreSQL(configuration Config) (*database.DB, error) {
 	}
 	maxIdle, _ := strconv.Atoi(configuration.Get("DB_MAX_IDLE"))
 	OpenCon, _ := strconv.Atoi(configuration.Get("DB_MAX_CONN"))
-	Max_idle_time, _ := strconv.Atoi(configuration.Get("DB_MAX_IDLE_TIME_IN_MINUTES"))
-	max_lifetime, _ := strconv.Atoi(configuration.Get("DB_MAX_LIFETIME_IN_MINUTES"))
+	MaxIdleTime, _ := strconv.Atoi(configuration.Get("DB_MAX_IDLE_TIME_IN_MINUTES"))
+	maxLifetime, _ := strconv.Atoi(configuration.Get("DB_MAX_LIFETIME_IN_MINUTES"))
 
 	postgreDB.SetMaxIdleConns(maxIdle)
 	postgreDB.SetMaxOpenConns(OpenCon)
-	postgreDB.SetConnMaxIdleTime(time.Duration(Max_idle_time) * time.Minute)
-	postgreDB.SetConnMaxLifetime(time.Duration(max_lifetime) * time.Minute)
+	postgreDB.SetConnMaxIdleTime(time.Duration(MaxIdleTime) * time.Minute)
+	postgreDB.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Minute)
 
 	return &database.DB{DB: db}, nil
 }

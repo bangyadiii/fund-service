@@ -14,11 +14,11 @@ type CampaignResponse struct {
 	UserID           string `json:"user_id"`
 }
 
-func FormatCampaignCollections(campaigns []model.Campaign) []CampaignResponse {
+func FormatCampaignCollections(campaigns []*model.Campaign) []CampaignResponse {
 	var campaignsFormatted []CampaignResponse
 
 	for _, data := range campaigns {
-		campaign := FormatCampaign(data)
+		campaign := FormatCampaign(*data)
 		campaignsFormatted = append(campaignsFormatted, campaign)
 	}
 

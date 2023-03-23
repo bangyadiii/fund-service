@@ -35,6 +35,7 @@ func (r *rest) GetCampaigns(ctx *gin.Context) {
 		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 		return
 	}
+
 	response.SuccessResponseWithPagination(ctx, http.StatusOK, "OK", data, pg)
 }
 

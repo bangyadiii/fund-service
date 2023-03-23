@@ -3,6 +3,7 @@ package main
 import (
 	"backend-crowdfunding/config"
 	"backend-crowdfunding/database/migrations"
+	"backend-crowdfunding/insfrastructure/cache"
 	"backend-crowdfunding/insfrastructure/firebase"
 	"backend-crowdfunding/sdk/id"
 	"backend-crowdfunding/src/handler"
@@ -31,7 +32,7 @@ func main() {
 	}
 
 	//setup Redis
-	//redisIns := cache.Init(configuration)
+	redisCache := cache.Init(configuration)
 
 	// setup id generator
 	var IDGenerator = id.NewUlid()
@@ -39,7 +40,7 @@ func main() {
 	firebaseAuth := firebase.NewFirebase()
 
 	// setup repository
-	repo := repository.InitRepository(db, IDGenerator, firebaseAuth)
+	repo := repository.InitRepository(db, redisCache, IDGenerator, firebaseAuth)
 
 	// setup service
 	svc := service.InitService(configuration, repo)
