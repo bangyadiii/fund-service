@@ -10,7 +10,6 @@ import (
 	"backend-crowdfunding/src/response"
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 )
 
@@ -53,7 +52,7 @@ func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.Cam
 	}
 
 	key := "article:limit:" + strconv.Itoa(int(params.Limit)) + ":page:" + strconv.Itoa(int(params.Page))
-	fmt.Println(key)
+
 	// get data from the cache
 	data, err := r.rd.Get(c, key)
 	// if there are no data in cache, get data from DB

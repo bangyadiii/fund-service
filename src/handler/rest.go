@@ -12,13 +12,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 var once = sync.Once{}
 
 type rest struct {
-	http    *gin.Engine
+	http    *fiber.App
 	service *service.Service
 	cfg     config.Config
 }
@@ -26,9 +28,7 @@ type rest struct {
 func Init(s *service.Service, cfg config.Config) *rest {
 	r := &rest{}
 	once.Do(func() {
-		gin.SetMode(cfg.Get("APP_MODE"))
-
-		r.http = gin.Default()
+		r.http = fiber.New()
 		r.cfg = cfg
 		r.service = s
 
@@ -40,30 +40,37 @@ func Init(s *service.Service, cfg config.Config) *rest {
 
 func (r *rest) RegisterMiddlewareAndRoutes() {
 	// Global middleware
+	r.http.Use(recover.New())
+	r.http.Use(logger.New(logger.Config{
+		Format: "[${ip}]:${port} ${status} - ${method} ${path} ${latency}\n",
+	}))
+
+	//r.http.Use(swagger.New(r.cfg))
 
 	// auth router group
 	api := r.http.Group("api/v1")
 	authApi := api.Group("/auth")
-	authApi.POST("/email-is-available", r.CheckIsEmailAvailable)
-	authApi.POST("/register", r.RegisterUser)
-	authApi.POST("/login", r.Login)
-	authApi.POST("/login/google", r.LoginWithGoogle)
-	authApi.POST("/avatars", middleware.VerifyToken(r.service.User, r.service.Auth), r.UploadAvatar)
+	authApi.Post("/email-is-available", r.CheckIsEmailAvailable)
+	authApi.Post("/register", r.RegisterUser)
+	authApi.Post("/login", r.Login)
+	authApi.Post("/login/google", r.LoginWithGoogle)
+	authApi.Post("/avatars", middleware.VerifyToken(r.service.User, r.service.Auth), r.UploadAvatar)
 
 	// campaign router group
 	campaignRoute := api.Group("/campaigns")
 
 	campaignImages := campaignRoute.Group("/images")
-	campaignImages.POST("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.UploadCampaignImage)
 
-	campaignRoute.PUT("/:id", middleware.VerifyToken(r.service.User, r.service.Auth), r.UpdateCampaign)
-	campaignRoute.GET("/:id", r.GetCampaignByID)
-	campaignRoute.GET("/", r.GetCampaigns)
-	campaignRoute.POST("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateNewCampaign)
+	campaignRoute.Get("/:id", r.GetCampaignByID)
+	campaignRoute.Get("/", r.GetCampaigns)
+	// authenticated require routes
+	campaignImages.Post("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.UploadCampaignImage)
+	campaignRoute.Put("/:id", middleware.VerifyToken(r.service.User, r.service.Auth), r.UpdateCampaign)
+	campaignRoute.Post("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateNewCampaign)
 
 	trxRoutes := api.Group("/transactions")
-	trxRoutes.GET("/", r.GetAllTransactionsByCampaignID)
-	trxRoutes.POST("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateTransaction)
+	trxRoutes.Get("/", r.GetAllTransactionsByCampaignID)
+	trxRoutes.Post("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateTransaction)
 }
 
 func (r *rest) Run() {
@@ -76,19 +83,10 @@ func (r *rest) Run() {
 		This will allow us to gracefully shutdown the server.
 	*/
 
-	port := ":8080"
-	if r.cfg.Get("APP_PORT") != "" {
-		port = ":" + r.cfg.Get("APP_PORT")
-	}
-
-	server := &http.Server{
-		Addr:              port,
-		Handler:           r.http,
-		ReadHeaderTimeout: 2 * time.Second,
-	}
+	var port = r.cfg.GetWithDefault("APP_PORT", ":8080")
 
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := r.http.Listen(port); err != nil && err != http.ErrServerClosed {
 			log.Fatal("error while listening server,", err)
 		}
 	}()
@@ -101,7 +99,7 @@ func (r *rest) Run() {
 	shutdownCtx, cancel := context.WithTimeout(c, 5*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(shutdownCtx); err != nil {
+	if err := r.http.ShutdownWithContext(shutdownCtx); err != nil {
 		log.Fatalf("error while shutting down server: %v", err)
 	}
 

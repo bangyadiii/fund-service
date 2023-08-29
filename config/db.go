@@ -15,11 +15,11 @@ func InitPostgreSQL(configuration Config) (*database.DB, error) {
 	var err error
 
 	connStr := fmt.Sprintf("user=%s password=%s port=%s dbname=%s sslmode=%s",
-		configuration.Get("DB_USER"),
-		configuration.Get("DB_PASSWORD"),
-		configuration.Get("DB_PORT"),
-		configuration.Get("DB_NAME"),
-		configuration.Get("DB_SSLMODE"),
+		configuration.GetOrPanic("DB_USER"),
+		configuration.GetOrPanic("DB_PASSWORD"),
+		configuration.GetOrPanic("DB_PORT"),
+		configuration.GetOrPanic("DB_NAME"),
+		configuration.GetOrPanic("DB_SSLMODE"),
 	)
 
 	db, err := gorm.Open(postgres.Open(connStr))

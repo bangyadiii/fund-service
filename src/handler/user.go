@@ -2,7 +2,6 @@ package handler
 
 import (
 	"backend-crowdfunding/helper"
-	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/request"
 	"backend-crowdfunding/src/response"
 	"fmt"
@@ -10,166 +9,152 @@ import (
 	"path"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 )
 
 type UserHandler interface {
-	RegisterUser(c *gin.Context)
-	Login(c *gin.Context)
-	CheckIsEmailAvailable(c *gin.Context)
-	UploadAvatar(c *gin.Context)
+	RegisterUser(ctx *fiber.Ctx) error
+	Login(ctx *fiber.Ctx) error
+	CheckIsEmailAvailable(ctx *fiber.Ctx) error
+	UploadAvatar(ctx *fiber.Ctx) error
 }
 
-func (r *rest) RegisterUser(c *gin.Context) {
+func (r *rest) RegisterUser(ctx *fiber.Ctx) error {
 	var input request.RegisterUserInput
 
-	err := c.ShouldBindJSON(&input)
+	err := ctx.BodyParser(&input)
 	if err != nil {
 		errors := helper.FormatErrorValidation(err)
 		data := response.APIResponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, errors)
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
 	var checkEmailFormatInput request.CheckEmailInput
 	checkEmailFormatInput.Email = input.Email
 
-	isAvailableEmail, err := r.service.User.IsEmailAvailable(c.Request.Context(), checkEmailFormatInput)
+	isAvailableEmail, err := r.service.User.IsEmailAvailable(ctx.Context(), checkEmailFormatInput)
 
 	if err != nil {
 		data := response.APIResponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, err.Error())
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
 	if !isAvailableEmail {
-		respData := gin.H{"is_available": isAvailableEmail}
+		respData := fiber.Map{"is_available": isAvailableEmail}
 		data := response.APIResponse("Email has been registered", http.StatusBadRequest, "error", respData, nil)
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
 
-	newUser, err := r.service.User.RegisterUser(c.Request.Context(), input)
+	newUser, err := r.service.User.RegisterUser(ctx.Context(), input)
 	if err != nil {
 		data := response.APIResponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
 	newToken, err := r.service.Auth.GenerateToken(newUser.ID, newUser.Email)
 
 	if err != nil {
 		data := response.APIResponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
 	formattedUser := response.FormatUserLogin(&newUser, newToken)
 
 	if err != nil {
 		data := response.APIResponse("Register failed", http.StatusBadRequest, "error", nil, err.Error())
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
 
 	data := response.APIResponse("Register success", http.StatusOK, "success", formattedUser, nil)
-	c.JSON(http.StatusOK, data)
+	return ctx.Status(http.StatusOK).JSON(data)
 
 }
 
-func (r *rest) Login(c *gin.Context) {
+func (r *rest) Login(ctx *fiber.Ctx) error {
 	var input request.LoginUserInput
-	err := c.ShouldBindJSON(&input)
+	err := ctx.BodyParser(&input)
 
 	if err != nil {
 		errors := helper.FormatErrorValidation(err)
-		response.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", errors)
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errors)
 	}
-	loginResponse, err := r.service.User.Login(c.Request.Context(), input)
+	loginResponse, err := r.service.User.Login(ctx.Context(), input)
 	if err != nil {
-		response.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 	}
 
-	response.SuccessResponse(c, http.StatusOK, "OK", loginResponse)
+	return response.SuccessResponse(ctx, http.StatusOK, "OK", loginResponse)
 }
 
-func (r *rest) CheckIsEmailAvailable(c *gin.Context) {
+func (r *rest) CheckIsEmailAvailable(c *fiber.Ctx) error {
 	var input request.CheckEmailInput
-	err := c.ShouldBindJSON(&input)
+	err := c.BodyParser(&input)
 
 	if err != nil {
 		errors := helper.FormatErrorValidation(err)
 		data := response.APIResponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, errors)
-		c.JSON(http.StatusUnprocessableEntity, data)
-		return
+		return c.Status(http.StatusUnprocessableEntity).JSON(data)
 	}
-	IsEmailAvailable, err := r.service.User.IsEmailAvailable(c.Request.Context(), input)
+	IsEmailAvailable, err := r.service.User.IsEmailAvailable(c.Context(), input)
 	if err != nil {
-		errors := helper.FormatErrorValidation(err)
-		response.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", errors)
-		return
+		return err
+
+		// errors := helper.FormatErrorValidation(err)
+		// response.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", errors)
 	}
-	respData := gin.H{"is_available": IsEmailAvailable}
-	response.SuccessResponse(c, http.StatusOK, "OK", respData)
+	respData := fiber.Map{"is_available": IsEmailAvailable}
+	return response.SuccessResponse(c, http.StatusOK, "OK", respData)
 }
 
-func (r *rest) UploadAvatar(c *gin.Context) {
-	currentUser := c.MustGet("current_user").(model.User)
+func (r *rest) UploadAvatar(ctx *fiber.Ctx) error {
+	currentUser := ctx.Locals("current_user").(response.UserResponse)
 	userID := currentUser.ID
-	file, err := c.FormFile("avatar")
+	file, err := ctx.FormFile("avatar")
 	if err != nil {
-		data := gin.H{
+		data := fiber.Map{
 			"is_uploaded": false,
 		}
 		errors := helper.FormatErrorValidation(err)
 		resp := response.APIResponse("Failed to upload avatar 1", http.StatusBadRequest, "error", data, errors)
-		c.JSON(http.StatusBadRequest, resp)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(resp)
 	}
 
 	filePath := fmt.Sprintf("assets/images/avatars/%s-%d%s", userID, time.Now().Unix(), path.Ext(file.Filename))
-	err = c.SaveUploadedFile(file, filePath)
+	err = ctx.SaveFile(file, filePath)
 
 	if err != nil {
-		data := gin.H{
+		data := fiber.Map{
 			"is_uploaded": false,
 		}
 		resp := response.APIResponse("Failed to upload avatar 2", http.StatusBadRequest, "error", data, err.Error())
-		c.JSON(http.StatusBadRequest, resp)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(resp)
 	}
 
-	_, err = r.service.User.SaveAvatar(c.Request.Context(), userID, filePath)
+	_, err = r.service.User.SaveAvatar(ctx.Context(), userID, filePath)
 	if err != nil {
-		data := gin.H{
+		data := fiber.Map{
 			"is_uploaded": false,
 		}
 		errors := helper.FormatErrorValidation(err)
 		resp := response.APIResponse("Failed to upload avatar 3", http.StatusBadRequest, "error", data, errors)
-		c.JSON(http.StatusBadRequest, resp)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(resp)
 	}
 
-	data := gin.H{
+	data := fiber.Map{
 		"is_uploaded": true,
 	}
 	resp := response.APIResponse("Avatar successfuly uploaded.", http.StatusOK, "success", data, nil)
-	c.JSON(http.StatusOK, resp)
-
+	return ctx.Status(http.StatusOK).JSON(resp)
 }
 
-func (r *rest) LoginWithGoogle(c *gin.Context) {
+func (r *rest) LoginWithGoogle(ctx *fiber.Ctx) error {
 	var paramGoogle request.LoginWithGoogleInput
-	err := c.ShouldBindJSON(&paramGoogle)
+	err := ctx.BodyParser(&paramGoogle)
 	if err != nil {
 		data := response.APIResponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
-		c.JSON(http.StatusBadRequest, data)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(data)
 	}
-	userRes, err := r.service.User.LoginWithGoogle(c.Request.Context(), paramGoogle)
+	userRes, err := r.service.User.LoginWithGoogle(ctx.Context(), paramGoogle)
 	if err != nil {
 		resp := response.APIResponse("Failed to upload avatar 2", http.StatusBadRequest, "error", nil, err.Error())
-		c.JSON(http.StatusBadRequest, resp)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(resp)
 	}
 	res := response.APIResponse("Login success", http.StatusOK, "success", userRes, nil)
-	c.JSON(http.StatusOK, res)
+	return ctx.Status(http.StatusOK).JSON(res)
 }

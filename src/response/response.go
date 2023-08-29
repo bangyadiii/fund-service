@@ -3,7 +3,7 @@ package response
 import (
 	"math"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Response struct {
@@ -73,18 +73,18 @@ func FormatPaginationParam(params PaginationParam) *PaginationParam {
 	return &paginationParam
 }
 
-func SuccessResponseWithPagination(ctx *gin.Context, code int, message string, data interface{}, pg *PaginationParam) {
+func SuccessResponseWithPagination(ctx *fiber.Ctx, code int, message string, data interface{}, pg *PaginationParam) error {
 	json := APIResponse(message, code, "success", data, nil)
 	json = AddPagination(json, pg)
-	ctx.JSON(code, json)
+	return ctx.Status(code).JSON(json)
 }
 
-func SuccessResponse(ctx *gin.Context, code int, message string, data interface{}) {
+func SuccessResponse(ctx *fiber.Ctx, code int, message string, data interface{}) error {
 	json := APIResponse(message, code, "success", data, nil)
-	ctx.JSON(code, json)
+	return ctx.Status(code).JSON(json)
 }
 
-func ErrorResponse(ctx *gin.Context, code int, message string, errors interface{}) {
-	json := APIResponse(message, code, "success", nil, errors)
-	ctx.JSON(code, json)
+func ErrorResponse(ctx *fiber.Ctx, code int, message string, errors interface{}) error {
+	json := APIResponse(message, code, "error", nil, errors)
+	return ctx.Status(code).JSON(json)
 }

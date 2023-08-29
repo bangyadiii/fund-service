@@ -5,143 +5,128 @@ import (
 	"backend-crowdfunding/src/request"
 	"backend-crowdfunding/src/response"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type CampaignHandler interface {
-	GetCampaigns(ctx *gin.Context)
-	GetCampaignByID(ctx *gin.Context)
-	CreateNewCampaign(ctx *gin.Context)
-	UpdateCampaign(ctx *gin.Context)
-	UploadCampaignImage(ctx *gin.Context)
+	GetCampaigns(ctx *fiber.Ctx) error
+	GetCampaignByID(ctx *fiber.Ctx) error
+	CreateNewCampaign(ctx *fiber.Ctx) error
+	UpdateCampaign(ctx *fiber.Ctx) error
+	UploadCampaignImage(ctx *fiber.Ctx) error
 }
 
 // GetCampaigns A function that is used to get all campaigns.
-func (r *rest) GetCampaigns(ctx *gin.Context) {
+func (r *rest) GetCampaigns(ctx *fiber.Ctx) error {
 	var param request.CampaignsWithPaginationParam
-	err := ctx.ShouldBindQuery(&param)
+	err := ctx.ParamsParser(&param)
 	if err != nil {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 	}
 
-	data, pg, err := r.service.Campaign.GetCampaigns(ctx.Request.Context(), param)
+	data, pg, err := r.service.Campaign.GetCampaigns(ctx.Context(), param)
 
 	if err != nil {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 	}
 
-	response.SuccessResponseWithPagination(ctx, http.StatusOK, "OK", data, pg)
+	return response.SuccessResponseWithPagination(ctx, http.StatusOK, "OK", data, pg)
 }
 
 // GetCampaignByID A function that is used to get a campaign by ID.
-func (r *rest) GetCampaignByID(ctx *gin.Context) {
+func (r *rest) GetCampaignByID(ctx *fiber.Ctx) error {
 	var input request.GetCampaignByIDInput
-	err := ctx.ShouldBindUri(&input)
+	err := ctx.ParamsParser(&input)
 
 	if err != nil {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 	}
 
-	data, err := r.service.Campaign.GetCampaignByID(ctx.Request.Context(), input)
+	data, err := r.service.Campaign.GetCampaignByID(ctx.Context(), input)
 
 	if err != nil {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 	}
-	response.SuccessResponse(ctx, http.StatusOK, "OK", data)
+	return response.SuccessResponse(ctx, http.StatusOK, "OK", data)
 }
 
 // CreateNewCampaign A function that is used to create a new campaign.
-func (r *rest) CreateNewCampaign(ctx *gin.Context) {
+func (r *rest) CreateNewCampaign(ctx *fiber.Ctx) error {
 	var input request.CreateCampaignInput
-	err := ctx.ShouldBindJSON(&input)
+	err := ctx.BodyParser(&input)
 	if err != nil {
 		errorData := helper.FormatErrorValidation(err)
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
 	}
-	userString, ok := ctx.Get("current_user")
-	if !ok {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "Unautheticated", nil)
-	}
+	userString := ctx.Locals("current_user")
 	userResp, ok := userString.(response.UserResponse)
 	if !ok {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
 	}
 
 	input.User.ID = userResp.ID
 	input.User.Email = userResp.Email
 
-	campaignRes, err := r.service.Campaign.CreateCampaign(ctx.Request.Context(), input)
+	campaignRes, err := r.service.Campaign.CreateCampaign(ctx.Context(), input)
 	if err != nil {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
 	}
-	response.SuccessResponse(ctx, http.StatusCreated, "CREATED", campaignRes)
+	return response.SuccessResponse(ctx, http.StatusCreated, "CREATED", campaignRes)
 }
 
 // UpdateCampaign A function that is used to update a campaign.
-func (r *rest) UpdateCampaign(ctx *gin.Context) {
+func (r *rest) UpdateCampaign(ctx *fiber.Ctx) error {
 	var input request.UpdateCampaignInput
 	var campaignID request.GetCampaignByIDInput
 
-	err := ctx.ShouldBindUri(&campaignID)
+	err := ctx.BodyParser(&campaignID)
 
 	if err != nil {
 		errorData := helper.FormatErrorValidation(err)
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
 	}
 
-	err = ctx.ShouldBindJSON(&input)
+	err = ctx.BodyParser(&input)
 
 	if err != nil {
 		errorData := helper.FormatErrorValidation(err)
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
-		return
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errorData)
 	}
-	userString, ok := ctx.Get("current_user")
-	if !ok {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
-	}
+	userString := ctx.Locals("current_user")
+
 	userResp, ok := userString.(response.UserResponse)
+
 	if !ok {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
 	}
 
 	input.User.ID = userResp.ID
 	input.User.Email = userResp.Email
 
-	data, err := r.service.Campaign.UpdateCampaign(ctx.Request.Context(), campaignID, input)
+	data, err := r.service.Campaign.UpdateCampaign(ctx.Context(), campaignID, input)
 
 	if err != nil {
-		response.ErrorResponse(ctx, http.StatusInternalServerError, "Internal server error", err.Error())
-		return
+		return response.ErrorResponse(ctx, http.StatusInternalServerError, "Internal server error", err.Error())
 	}
 
-	response.SuccessResponse(ctx, http.StatusOK, "OK", data)
+	return response.SuccessResponse(ctx, http.StatusOK, "OK", data)
 }
 
-func (r *rest) UploadCampaignImage(ctx *gin.Context) {
+func (r *rest) UploadCampaignImage(ctx *fiber.Ctx) error {
 	var input request.UploadCampaignImageInput
-	err := ctx.ShouldBind(&input)
+	err := ctx.BodyParser(&input)
 
 	if err != nil {
 		err := helper.FormatErrorValidation(err)
 		res := response.APIResponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(res)
 	}
-	userResp, ok := ctx.MustGet("current_user").(response.UserResponse)
+	userResp, ok := ctx.Locals("current_user").(response.UserResponse)
 	if !ok {
-		response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
+		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", nil)
 	}
 
 	input.User.ID = userResp.ID
@@ -151,38 +136,35 @@ func (r *rest) UploadCampaignImage(ctx *gin.Context) {
 
 	if err != nil {
 		res := response.APIResponse("Bad Reqeust", http.StatusBadRequest, "error", nil, err)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(res)
 	}
 
 	path := fmt.Sprintf("assets/images/campaigns/%s-%d-%s", input.CampaignID, time.Now().Day(), imageFile.Filename)
 
-	err = ctx.SaveUploadedFile(imageFile, path)
+	err = ctx.SaveFile(imageFile, path)
 
 	if err != nil {
-		data := gin.H{
+		data := fiber.Map{
 			"is_uploaded": false,
 		}
 		apiResponse := response.APIResponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
-		ctx.JSON(http.StatusBadRequest, apiResponse)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(apiResponse)
 	}
 
 	input.ImageName = path
-	payload, err := r.service.Campaign.UploadCampaignImage(ctx.Request.Context(), input)
+	payload, err := r.service.Campaign.UploadCampaignImage(ctx.Context(), input)
 
 	if err != nil {
 		err := os.Remove(path)
 		if err != nil {
-			ctx.JSON(500, err)
+			return ctx.Status(http.StatusInternalServerError).JSON(err)
 		}
-		data := gin.H{
+		data := fiber.Map{
 			"is_uploaded": false,
 		}
 		res := response.APIResponse("Failed to upload campaign image", http.StatusBadRequest, "error", data, err.Error())
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.Status(http.StatusBadRequest).JSON(res)
 	}
 
-	response.SuccessResponse(ctx, http.StatusOK, "OK", payload)
+	return response.SuccessResponse(ctx, http.StatusOK, "OK", payload)
 }
