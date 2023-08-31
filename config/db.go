@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -11,15 +12,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitPostgreSQL(configuration Config) (*database.DB, error) {
+func InitPostgresSQL(env Config) (*database.DB, error) {
 	var err error
 
 	connStr := fmt.Sprintf("user=%s password=%s port=%s dbname=%s sslmode=%s",
-		configuration.GetOrPanic("DB_USER"),
-		configuration.GetOrPanic("DB_PASSWORD"),
-		configuration.GetOrPanic("DB_PORT"),
-		configuration.GetOrPanic("DB_NAME"),
-		configuration.GetOrPanic("DB_SSLMODE"),
+		env.GetOrPanic("DB_USER"),
+		env.GetOrPanic("DB_PASSWORD"),
+		env.GetOrPanic("DB_PORT"),
+		env.GetOrPanic("DB_NAME"),
+		env.GetOrPanic("DB_SSLMODE"),
 	)
 
 	db, err := gorm.Open(postgres.Open(connStr))
@@ -28,20 +29,27 @@ func InitPostgreSQL(configuration Config) (*database.DB, error) {
 		return &database.DB{}, err
 	}
 
-	postgreDB, err := db.DB()
+	postgresDB, err := db.DB()
 
 	if err != nil {
 		return &database.DB{}, err
 	}
-	maxIdle, _ := strconv.Atoi(configuration.Get("DB_MAX_IDLE"))
-	OpenCon, _ := strconv.Atoi(configuration.Get("DB_MAX_CONN"))
-	MaxIdleTime, _ := strconv.Atoi(configuration.Get("DB_MAX_IDLE_TIME_IN_MINUTES"))
-	maxLifetime, _ := strconv.Atoi(configuration.Get("DB_MAX_LIFETIME_IN_MINUTES"))
+	maxIdle, _ := strconv.Atoi(env.Get("DB_MAX_IDLE"))
+	OpenCon, _ := strconv.Atoi(env.Get("DB_MAX_CONN"))
+	MaxIdleTime, _ := strconv.Atoi(env.Get("DB_MAX_IDLE_TIME_IN_MINUTES"))
+	maxLifetime, _ := strconv.Atoi(env.Get("DB_MAX_LIFETIME_IN_MINUTES"))
 
-	postgreDB.SetMaxIdleConns(maxIdle)
-	postgreDB.SetMaxOpenConns(OpenCon)
-	postgreDB.SetConnMaxIdleTime(time.Duration(MaxIdleTime) * time.Minute)
-	postgreDB.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Minute)
+	postgresDB.SetMaxIdleConns(maxIdle)
+	postgresDB.SetMaxOpenConns(OpenCon)
+	postgresDB.SetConnMaxIdleTime(time.Duration(MaxIdleTime) * time.Minute)
+	postgresDB.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Minute)
 
 	return &database.DB{DB: db}, nil
+}
+
+func CloseDB(db *database.DB) {
+	sqlDB, _ := db.DB.DB()
+
+	_ = sqlDB.Close()
+	log.Println("database has been closed.")
 }

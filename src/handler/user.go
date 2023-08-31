@@ -19,7 +19,7 @@ type UserHandler interface {
 	UploadAvatar(ctx *fiber.Ctx) error
 }
 
-func (r *rest) RegisterUser(ctx *fiber.Ctx) error {
+func (r *Rest) RegisterUser(ctx *fiber.Ctx) error {
 	var input request.RegisterUserInput
 
 	err := ctx.BodyParser(&input)
@@ -66,7 +66,7 @@ func (r *rest) RegisterUser(ctx *fiber.Ctx) error {
 
 }
 
-func (r *rest) Login(ctx *fiber.Ctx) error {
+func (r *Rest) Login(ctx *fiber.Ctx) error {
 	var input request.LoginUserInput
 	err := ctx.BodyParser(&input)
 
@@ -82,7 +82,7 @@ func (r *rest) Login(ctx *fiber.Ctx) error {
 	return response.SuccessResponse(ctx, http.StatusOK, "OK", loginResponse)
 }
 
-func (r *rest) CheckIsEmailAvailable(c *fiber.Ctx) error {
+func (r *Rest) CheckIsEmailAvailable(c *fiber.Ctx) error {
 	var input request.CheckEmailInput
 	err := c.BodyParser(&input)
 
@@ -96,13 +96,13 @@ func (r *rest) CheckIsEmailAvailable(c *fiber.Ctx) error {
 		return err
 
 		// errors := helper.FormatErrorValidation(err)
-		// response.ErrorResponse(c, http.StatusBadRequest, "BAD REQUEST", errors)
+		// response.ErrorResponse(c, Http.StatusBadRequest, "BAD REQUEST", errors)
 	}
 	respData := fiber.Map{"is_available": IsEmailAvailable}
 	return response.SuccessResponse(c, http.StatusOK, "OK", respData)
 }
 
-func (r *rest) UploadAvatar(ctx *fiber.Ctx) error {
+func (r *Rest) UploadAvatar(ctx *fiber.Ctx) error {
 	currentUser := ctx.Locals("current_user").(response.UserResponse)
 	userID := currentUser.ID
 	file, err := ctx.FormFile("avatar")
@@ -143,7 +143,7 @@ func (r *rest) UploadAvatar(ctx *fiber.Ctx) error {
 	return ctx.Status(http.StatusOK).JSON(resp)
 }
 
-func (r *rest) LoginWithGoogle(ctx *fiber.Ctx) error {
+func (r *Rest) LoginWithGoogle(ctx *fiber.Ctx) error {
 	var paramGoogle request.LoginWithGoogleInput
 	err := ctx.BodyParser(&paramGoogle)
 	if err != nil {

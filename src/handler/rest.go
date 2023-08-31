@@ -5,30 +5,25 @@ import (
 	"backend-crowdfunding/src/middleware"
 	"backend-crowdfunding/src/service"
 	"context"
-	"log"
-	"net/http"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"log"
+	"sync"
 )
 
 var once = sync.Once{}
 
-type rest struct {
-	http    *fiber.App
+type Rest struct {
+	Http    *fiber.App
 	service *service.Service
 	cfg     config.Config
 }
 
-func Init(s *service.Service, cfg config.Config) *rest {
-	r := &rest{}
+func Init(s *service.Service, cfg config.Config) *Rest {
+	r := &Rest{}
 	once.Do(func() {
-		r.http = fiber.New()
+		r.Http = fiber.New()
 		r.cfg = cfg
 		r.service = s
 
@@ -38,17 +33,17 @@ func Init(s *service.Service, cfg config.Config) *rest {
 	return r
 }
 
-func (r *rest) RegisterMiddlewareAndRoutes() {
+func (r *Rest) RegisterMiddlewareAndRoutes() {
 	// Global middleware
-	r.http.Use(recover.New())
-	r.http.Use(logger.New(logger.Config{
+	r.Http.Use(recover.New())
+	r.Http.Use(logger.New(logger.Config{
 		Format: "[${ip}]:${port} ${status} - ${method} ${path} ${latency}\n",
 	}))
 
-	//r.http.Use(swagger.New(r.cfg))
+	//r.Http.Use(swagger.New(r.cfg))
 
 	// auth router group
-	api := r.http.Group("api/v1")
+	api := r.Http.Group("api/v1")
 	authApi := api.Group("/auth")
 	authApi.Post("/email-is-available", r.CheckIsEmailAvailable)
 	authApi.Post("/register", r.RegisterUser)
@@ -73,33 +68,16 @@ func (r *rest) RegisterMiddlewareAndRoutes() {
 	trxRoutes.Post("/", middleware.VerifyToken(r.service.User, r.service.Auth), r.CreateTransaction)
 }
 
-func (r *rest) Run() {
-	// set parent context
-	c := context.Background()
-	ctx, stop := signal.NotifyContext(c, syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-	/*
-		Create context that listens for the interrupt signal from the OS.
-		This will allow us to gracefully shutdown the server.
-	*/
+func (r *Rest) Run() {
+	var port = r.cfg.GetWithDefault("APP_PORT", "8080")
 
-	var port = r.cfg.GetWithDefault("APP_PORT", ":8080")
+	if err := r.Http.Listen("0.0.0.0:" + port); err != nil {
+		log.Fatal("error while listening server,", err)
+	}
+}
 
-	go func() {
-		if err := r.http.Listen(port); err != nil && err != http.ErrServerClosed {
-			log.Fatal("error while listening server,", err)
-		}
-	}()
-
-	log.Printf("Server is running at %s", port)
-
-	<-ctx.Done()
-	stop()
-	log.Println("Shutting down server")
-	shutdownCtx, cancel := context.WithTimeout(c, 5*time.Second)
-	defer cancel()
-
-	if err := r.http.ShutdownWithContext(shutdownCtx); err != nil {
+func (r Rest) Shutdown(ctx context.Context) {
+	if err := r.Http.ShutdownWithContext(ctx); err != nil {
 		log.Fatalf("error while shutting down server: %v", err)
 	}
 

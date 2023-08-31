@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -35,6 +36,21 @@ func (config *configImpl) GetWithDefault(key, defaultVal string) string {
 		return value
 	}
 	return defaultVal
+}
+
+func (config *configImpl) GetInt(key string, defaultVal int) int {
+	var valueString string
+	var value int
+	if valueString := os.Getenv(key); valueString == "" {
+		return defaultVal
+	}
+
+	value, err := strconv.Atoi(valueString)
+	if err != nil {
+		return defaultVal
+	}
+
+	return value
 }
 
 func New(filenames ...string) Config {

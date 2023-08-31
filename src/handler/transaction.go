@@ -15,7 +15,7 @@ type TransactionHandler interface {
 }
 
 // GetAllTransactionsByCampaignID A function that will be called when the user access the route `/transaction/campaign` with the method `GET`.
-func (r *rest) GetAllTransactionsByCampaignID(ctx *fiber.Ctx) error {
+func (r *Rest) GetAllTransactionsByCampaignID(ctx *fiber.Ctx) error {
 	campaignID := ctx.Query("campaign_id")
 
 	campaignResp, err := r.service.Trx.GetTransactionsByCampaignID(ctx.Context(), campaignID)
@@ -26,7 +26,7 @@ func (r *rest) GetAllTransactionsByCampaignID(ctx *fiber.Ctx) error {
 	return response.SuccessResponse(ctx, http.StatusOK, "OK", campaignResp)
 }
 
-func (r *rest) CreateTransaction(ctx *fiber.Ctx) error {
+func (r *Rest) CreateTransaction(ctx *fiber.Ctx) error {
 	var input request.CreateTransactionInput
 
 	err := ctx.BodyParser(&input)

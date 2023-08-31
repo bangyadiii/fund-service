@@ -13,14 +13,14 @@ Fund is a crowdfunding platform that enables clients to post their projects in s
 
 -   Rename the `.env.example` file into `.env`.
 -   Fill the value in `.env` file based on your case.
--   Run http server
+-   Run Http development server
     ```bash
-    $ go run app/http/main.go
+    make dev
     ```
 
 ## Architecture
 
-This repository implements Clean Architecture and a bit SOLID principles.
+This repository implements Clean Architecture and a bit of SOLID principles.
 
 Router -> Handler -> Service -> Repository
 

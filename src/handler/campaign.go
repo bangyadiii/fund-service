@@ -20,7 +20,7 @@ type CampaignHandler interface {
 }
 
 // GetCampaigns A function that is used to get all campaigns.
-func (r *rest) GetCampaigns(ctx *fiber.Ctx) error {
+func (r *Rest) GetCampaigns(ctx *fiber.Ctx) error {
 	var param request.CampaignsWithPaginationParam
 	err := ctx.ParamsParser(&param)
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *rest) GetCampaigns(ctx *fiber.Ctx) error {
 }
 
 // GetCampaignByID A function that is used to get a campaign by ID.
-func (r *rest) GetCampaignByID(ctx *fiber.Ctx) error {
+func (r *Rest) GetCampaignByID(ctx *fiber.Ctx) error {
 	var input request.GetCampaignByIDInput
 	err := ctx.ParamsParser(&input)
 
@@ -54,7 +54,7 @@ func (r *rest) GetCampaignByID(ctx *fiber.Ctx) error {
 }
 
 // CreateNewCampaign A function that is used to create a new campaign.
-func (r *rest) CreateNewCampaign(ctx *fiber.Ctx) error {
+func (r *Rest) CreateNewCampaign(ctx *fiber.Ctx) error {
 	var input request.CreateCampaignInput
 	err := ctx.BodyParser(&input)
 	if err != nil {
@@ -78,7 +78,7 @@ func (r *rest) CreateNewCampaign(ctx *fiber.Ctx) error {
 }
 
 // UpdateCampaign A function that is used to update a campaign.
-func (r *rest) UpdateCampaign(ctx *fiber.Ctx) error {
+func (r *Rest) UpdateCampaign(ctx *fiber.Ctx) error {
 	var input request.UpdateCampaignInput
 	var campaignID request.GetCampaignByIDInput
 
@@ -115,7 +115,7 @@ func (r *rest) UpdateCampaign(ctx *fiber.Ctx) error {
 	return response.SuccessResponse(ctx, http.StatusOK, "OK", data)
 }
 
-func (r *rest) UploadCampaignImage(ctx *fiber.Ctx) error {
+func (r *Rest) UploadCampaignImage(ctx *fiber.Ctx) error {
 	var input request.UploadCampaignImageInput
 	err := ctx.BodyParser(&input)
 

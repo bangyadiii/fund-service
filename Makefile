@@ -1,11 +1,11 @@
+install:
+	go mod download
+
 build:
 	go build -o server app/http/main.go
 
-run: build
-	./server
-
 dev:
-	go run app/http/main.go
+	air
 
 watch:
 	reflex -s -r '\.go$$' make run
