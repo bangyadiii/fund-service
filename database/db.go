@@ -1,18 +1,21 @@
-package config
+package database
 
 import (
+	"backend-crowdfunding/config"
 	"fmt"
 	"log"
 	"strconv"
 	"time"
 
-	"backend-crowdfunding/database"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func InitPostgresSQL(env Config) (*database.DB, error) {
+type DB struct {
+	*gorm.DB
+}
+
+func InitPostgresSQL(env config.Config) (*DB, error) {
 	var err error
 
 	connStr := fmt.Sprintf("user=%s password=%s port=%s dbname=%s sslmode=%s",
@@ -26,13 +29,13 @@ func InitPostgresSQL(env Config) (*database.DB, error) {
 	db, err := gorm.Open(postgres.Open(connStr))
 
 	if err != nil {
-		return &database.DB{}, err
+		return &DB{}, err
 	}
 
 	postgresDB, err := db.DB()
 
 	if err != nil {
-		return &database.DB{}, err
+		return &DB{}, err
 	}
 	maxIdle, _ := strconv.Atoi(env.Get("DB_MAX_IDLE"))
 	OpenCon, _ := strconv.Atoi(env.Get("DB_MAX_CONN"))
@@ -44,10 +47,10 @@ func InitPostgresSQL(env Config) (*database.DB, error) {
 	postgresDB.SetConnMaxIdleTime(time.Duration(MaxIdleTime) * time.Minute)
 	postgresDB.SetConnMaxLifetime(time.Duration(maxLifetime) * time.Minute)
 
-	return &database.DB{DB: db}, nil
+	return &DB{DB: db}, nil
 }
 
-func CloseDB(db *database.DB) {
+func CloseDB(db *DB) {
 	sqlDB, _ := db.DB.DB()
 
 	_ = sqlDB.Close()

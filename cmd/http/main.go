@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend-crowdfunding/config"
+	"backend-crowdfunding/database"
 	"backend-crowdfunding/database/migrations"
 	"backend-crowdfunding/insfrastructure/cache"
 	"backend-crowdfunding/insfrastructure/firebase"
@@ -56,7 +57,7 @@ func run(ctx context.Context, env config.Config) (func(), error) {
 
 func buildServer(env config.Config) (*handler.Rest, func(), error) {
 	// init database
-	db, err := config.InitPostgresSQL(env)
+	db, err := database.InitPostgresSQL(env)
 	if err != nil {
 		return nil, func() {}, err
 	}
@@ -67,7 +68,7 @@ func buildServer(env config.Config) (*handler.Rest, func(), error) {
 	err = m.RunMigration()
 	if err != nil {
 		return nil, func() {
-			config.CloseDB(db)
+			database.CloseDB(db)
 		}, err
 	}
 
@@ -88,7 +89,7 @@ func buildServer(env config.Config) (*handler.Rest, func(), error) {
 	// init handler
 	rest := handler.Init(svc, env)
 	return rest, func() {
-		config.CloseDB(db)
+		database.CloseDB(db)
 	}, nil
 }
 
