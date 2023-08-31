@@ -58,7 +58,7 @@ func buildServer(env config.Config) (*handler.Rest, func(), error) {
 	// init database
 	db, err := config.InitPostgresSQL(env)
 	if err != nil {
-		return nil, func() {}, nil
+		return nil, func() {}, err
 	}
 
 	m := migrations.Migration{DB: db}
@@ -68,7 +68,7 @@ func buildServer(env config.Config) (*handler.Rest, func(), error) {
 	if err != nil {
 		return nil, func() {
 			config.CloseDB(db)
-		}, nil
+		}, err
 	}
 
 	//setup Redis
