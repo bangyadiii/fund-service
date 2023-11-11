@@ -1,0 +1,86 @@
+basePath: /api/v1
+definitions:
+  response.Meta:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      errors: {}
+      meta:
+        $ref: '#/definitions/response.Meta'
+    type: object
+  response.UserLoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/response.UserResponse'
+    type: object
+  response.UserResponse:
+    properties:
+      avatar:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      occupation:
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: Fund is a crowdfunding platform that enables clients to post their
+    projects in search of funding. With Fund, clients can create campaigns and showcase
+    their ideas to a community of potential investors. This project built with Go
+  title: Crowdfunding platform API
+  version: "1.0"
+paths:
+  /:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  additionalProperties:
+                    type: string
+                  type: object
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Check is email available
+      tags:
+      - Check Email
+schemes:
+- http
+swagger: "2.0"

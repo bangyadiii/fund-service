@@ -1,9 +1,11 @@
 package response
 
 import (
-	"math"
-
+	ierrors "backend-crowdfunding/sdk/errors"
+	"errors"
 	"github.com/gofiber/fiber/v2"
+	"math"
+	"net/http"
 )
 
 type Response struct {
@@ -33,6 +35,25 @@ func APIResponse(message string, code int, status string, data interface{}, erro
 	}
 
 	return jsonResponse
+}
+
+func RenderErrorResponse(ctx *fiber.Ctx, message string, err error) error {
+	var errorMap map[string]string
+	var status = http.StatusInternalServerError
+	var ierr *ierrors.Error
+	if !errors.As(err, &ierr) {
+		message = "Internal Server Error"
+	} else {
+		switch ierr.GetCode() {
+		case ierrors.NotFoundType:
+			status = http.StatusNotFound
+		case ierrors.ValidationErrorType:
+			status = http.StatusBadRequest
+			errorMap = ierr.Errors()
+		}
+	}
+
+	return ErrorResponse(ctx, status, message, errorMap)
 }
 
 func AddPagination(jsonResponse Response, pagination *PaginationParam) Response {
