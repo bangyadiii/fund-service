@@ -3,12 +3,15 @@ package repository
 import (
 	"backend-crowdfunding/database"
 	"backend-crowdfunding/insfrastructure/firebase"
+	ierrors "backend-crowdfunding/sdk/errors"
 	"backend-crowdfunding/sdk/id"
+	"backend-crowdfunding/src/dto/request"
 	"backend-crowdfunding/src/model"
-	"backend-crowdfunding/src/request"
 	"context"
 	"errors"
+
 	firebase_auth "firebase.google.com/go/auth"
+	"gorm.io/gorm"
 )
 
 type UserRepository interface {
@@ -36,11 +39,24 @@ func NewUserRepository(db *database.DB, firebase *firebase.Firebase, idGenerator
 
 func (r *userRepoImpl) SaveUser(ctx context.Context, user model.User) (model.User, error) {
 	user.ID = r.idGenerator.Generate()
-	data := r.db.WithContext(ctx).Create(&user)
+	trx := r.db.Begin()
+	var isExists int64
+	trx.WithContext(ctx).Where("email", user.Email).Count(&isExists)
 
-	if data.Error != nil {
-		return user, data.Error
+	if isExists > 0 {
+		trx.Rollback()
+		return user, ierrors.NewErrorf(400, ierrors.ErrorMap{
+			"email": "email exists",
+		}, "")
 	}
+
+	err := trx.WithContext(ctx).Create(&user).Error
+
+	if err != nil {
+		trx.Rollback()
+		return user, ierrors.NewErrorf(409, nil, "user conflict")
+	}
+	trx.Commit()
 	return user, nil
 }
 
@@ -48,30 +64,39 @@ func (r *userRepoImpl) FindByEmailUser(ctx context.Context, email string) (model
 	var user model.User
 	err := r.db.WithContext(ctx).Where("email = ?", email).Find(&user).Error
 
-	if err != nil {
-		return user, err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return user, ierrors.WrapErrorf(err, 404, nil, "user")
 	}
+
+	if err != nil {
+		return user, ierrors.NewErrorf(500, nil, "get user", err)
+	}
+
 	return user, nil
 }
 
 func (r userRepoImpl) Get(ctx context.Context, param request.UserParam) (model.User, error) {
 	var user model.User
+
 	res := r.db.WithContext(ctx).Where(param).First(&user)
 	if res.RowsAffected == 0 {
-		return user, errors.New("NOT_FOUND")
+		return user, ierrors.NewErrorf(404, nil, "user not found")
 	} else if res.Error != nil {
-		return user, res.Error
+		return user, ierrors.WrapErrorf(res.Error, 500, nil, "get user")
 	}
 	return user, nil
 }
 
 func (r *userRepoImpl) FindByIDUser(ctx context.Context, id string) (model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).Where("id = ?", id).Find(&user).Error
+	res := r.db.WithContext(ctx).Where("id = ?", id).Find(&user)
 
-	if err != nil {
-		return user, err
+	if res.RowsAffected == 0 {
+		return user, ierrors.WrapErrorf(res.Error, 404, nil, "user not found")
+	} else if res.Error != nil {
+		return user, res.Error
 	}
+
 	return user, nil
 }
 

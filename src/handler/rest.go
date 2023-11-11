@@ -38,7 +38,7 @@ func (r *Rest) Run() {
 	}
 }
 
-func (r Rest) Shutdown(ctx context.Context) {
+func (r *Rest) Shutdown(ctx context.Context) {
 	if err := r.Http.ShutdownWithContext(ctx); err != nil {
 		log.Fatalf("error while shutting down server: %v", err)
 	}

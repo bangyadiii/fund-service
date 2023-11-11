@@ -4,7 +4,6 @@ import (
 	"backend-crowdfunding/config"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -23,7 +22,7 @@ func InitPostgresSQL(env config.Config) (*DB, error) {
 		env.GetOrPanic("DB_PASSWORD"),
 		env.GetOrPanic("DB_PORT"),
 		env.GetOrPanic("DB_NAME"),
-		env.GetOrPanic("DB_SSLMODE"),
+		env.GetWithDefault("DB_SSLMODE", "false"),
 	)
 
 	db, err := gorm.Open(postgres.Open(connStr))
@@ -37,10 +36,10 @@ func InitPostgresSQL(env config.Config) (*DB, error) {
 	if err != nil {
 		return &DB{}, err
 	}
-	maxIdle, _ := strconv.Atoi(env.Get("DB_MAX_IDLE"))
-	OpenCon, _ := strconv.Atoi(env.Get("DB_MAX_CONN"))
-	MaxIdleTime, _ := strconv.Atoi(env.Get("DB_MAX_IDLE_TIME_IN_MINUTES"))
-	maxLifetime, _ := strconv.Atoi(env.Get("DB_MAX_LIFETIME_IN_MINUTES"))
+	maxIdle := env.GetInt("DB_MAX_IDLE", 50)
+	OpenCon := env.GetInt("DB_MAX_CONN", 100)
+	MaxIdleTime := env.GetInt("DB_MAX_IDLE_TIME_IN_MINUTES", 5)
+	maxLifetime := env.GetInt("DB_MAX_LIFETIME_IN_MINUTES", 15)
 
 	postgresDB.SetMaxIdleConns(maxIdle)
 	postgresDB.SetMaxOpenConns(OpenCon)

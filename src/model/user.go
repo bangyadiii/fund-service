@@ -11,8 +11,8 @@ type User struct {
 	Email           string `gorm:"index:idx_email,unique"`
 	Password        string `json:"-"`
 	Avatar          string
-	Role            string
-	IsGoogleAccount bool `json:"-"`
+	Role            string `gorm:"default:user"`
+	IsGoogleAccount bool   `json:"-"`
 	Transactions    []Transaction
 	CreatedAt       time.Time
 	UpdatedAt       time.Time

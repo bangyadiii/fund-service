@@ -1,9 +1,11 @@
 package handler
 
 import (
+	_ "backend-crowdfunding/docs"
 	"backend-crowdfunding/src/middleware"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 func (r *Rest) RegisterMiddlewareAndRoutes() {
@@ -13,12 +15,13 @@ func (r *Rest) RegisterMiddlewareAndRoutes() {
 		Format: "[${ip}]:${port} ${status} - ${method} ${path} ${latency}\n",
 	}))
 
-	//r.Http.Use(swagger.New(r.cfg))
+	r.Http.Get("/swagger/*", fiberSwagger.WrapHandler)
 
 	// auth router group
 	api := r.Http.Group("api/v1")
 	authApi := api.Group("/auth")
 	authApi.Post("/email-is-available", r.CheckIsEmailAvailable)
+
 	authApi.Post("/register", r.RegisterUser)
 	authApi.Post("/login", r.Login)
 	authApi.Post("/login/google", r.LoginWithGoogle)

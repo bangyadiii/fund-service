@@ -12,6 +12,7 @@ type Config interface {
 	Get(key string) string
 	GetWithDefault(key, defaultVal string) string
 	GetOrPanic(key string) string
+	GetInt(key string, defaultValue int) int
 }
 
 type configImpl struct {

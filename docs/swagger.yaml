@@ -1,5 +1,193 @@
 basePath: /api/v1
 definitions:
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  model.Transaction:
+    properties:
+      amount:
+        type: integer
+      campaignID:
+        type: string
+      code:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+      userID:
+        type: string
+    type: object
+  model.User:
+    properties:
+      avatar:
+        type: string
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      occupation:
+        type: string
+      role:
+        type: string
+      transactions:
+        items:
+          $ref: '#/definitions/model.Transaction'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  request.CampaignsWithPaginationParam:
+    properties:
+      limit:
+        type: integer
+      name:
+        type: string
+      page:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  request.CheckEmailInput:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  request.CreateCampaignInput:
+    properties:
+      backer_count:
+        type: integer
+      description:
+        type: string
+      goal_amount:
+        type: integer
+      name:
+        type: string
+      perks:
+        type: string
+      short_description:
+        type: string
+    required:
+    - backer_count
+    - description
+    - goal_amount
+    - name
+    - short_description
+    type: object
+  request.CreateTransactionInput:
+    properties:
+      amount:
+        type: integer
+      campaign_id:
+        type: string
+      code:
+        type: string
+      status:
+        type: string
+      userID:
+        type: string
+    required:
+    - amount
+    - campaign_id
+    - code
+    - status
+    type: object
+  request.GetCampaignByIDInput:
+    properties:
+      id:
+        type: string
+    required:
+    - id
+    type: object
+  request.LoginUserInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  request.RegisterUserInput:
+    properties:
+      avatar:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      occupation:
+        type: string
+      password:
+        type: string
+      role:
+        type: string
+    required:
+    - avatar
+    - email
+    - name
+    - occupation
+    - password
+    - role
+    type: object
+  request.UpdateCampaignInput:
+    properties:
+      backer_count:
+        type: integer
+      current_amount:
+        type: integer
+      description:
+        type: string
+      goal_amount:
+        type: integer
+      name:
+        type: string
+      perks:
+        type: string
+      short_description:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
+  response.CampaignResponse:
+    properties:
+      current_amount:
+        type: integer
+      description:
+        type: string
+      goal_amount:
+        type: integer
+      id:
+        type: string
+      image_url:
+        type: string
+      name:
+        type: string
+      short_description:
+        type: string
+      slug:
+        type: string
+      user_id:
+        type: string
+    type: object
   response.Meta:
     properties:
       code:
@@ -9,12 +197,42 @@ definitions:
       status:
         type: string
     type: object
+  response.PaginationResponse:
+    properties:
+      current_page:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer
+      page:
+        type: integer
+      total_element:
+        type: integer
+      total_page:
+        type: integer
+    type: object
   response.Response:
     properties:
       data: {}
       errors: {}
       meta:
         $ref: '#/definitions/response.Meta'
+    type: object
+  response.TransactionResponse:
+    properties:
+      amount:
+        type: integer
+      campaign_id:
+        type: string
+      code:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      user_id:
+        type: string
     type: object
   response.UserLoginResponse:
     properties:
@@ -36,6 +254,19 @@ definitions:
       occupation:
         type: string
     type: object
+  response.WithPagination:
+    properties:
+      data: {}
+      errors:
+        x-nullable: true
+      meta:
+        $ref: '#/definitions/response.Meta'
+      pagination:
+        allOf:
+        - $ref: '#/definitions/response.PaginationResponse'
+        x-nullable: true
+        x-omitempty: true
+    type: object
 host: localhost:8000
 info:
   contact: {}
@@ -45,7 +276,7 @@ info:
   title: Crowdfunding platform API
   version: "1.0"
 paths:
-  /:
+  /auth/email-is-available:
     post:
       consumes:
       - application/json
@@ -72,15 +303,418 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 errors:
+                  $ref: '#/definitions/request.CheckEmailInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Check is email available
+      tags:
+      - Authentication
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UserLoginResponse'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.LoginUserInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Login User
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UserLoginResponse'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.RegisterUserInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "409":
+          description: Conflict email
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
                   additionalProperties:
                     type: string
                   type: object
                 meta:
                   $ref: '#/definitions/response.Meta'
               type: object
-      summary: Check is email available
+      summary: Register new user
       tags:
-      - Check Email
+      - Authentication
+  /campaigns/:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.WithPagination'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.CampaignResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.CampaignsWithPaginationParam'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Get all campaigns.
+      tags:
+      - Campaign
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Campaign request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCampaignInput'
+      - description: Access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CampaignResponse'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.CreateCampaignInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Create Campaign.
+      tags:
+      - Campaign
+  /campaigns/{campaign_id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.WithPagination'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CampaignResponse'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.GetCampaignByIDInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Get Campaign By ID.
+      tags:
+      - Campaign
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Campaign ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Campaign payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateCampaignInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CampaignResponse'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.CreateCampaignInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "404":
+          description: Campaign ID Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Update Campaign.
+      tags:
+      - Campaign
+  /transactions/:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Campaign ID
+        in: query
+        name: campaign_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/response.TransactionResponse'
+                  type: array
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "404":
+          description: Transaction Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Get Transaction.
+      tags:
+      - Transaction
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Transaction payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateTransactionInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.TransactionResponse'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "400":
+          description: Validation Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                errors:
+                  $ref: '#/definitions/request.CreateTransactionInput'
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "404":
+          description: Transaction Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                meta:
+                  $ref: '#/definitions/response.Meta'
+              type: object
+      summary: Create Transaction.
+      tags:
+      - Transaction
 schemes:
 - http
 swagger: "2.0"

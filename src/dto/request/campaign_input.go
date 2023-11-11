@@ -2,7 +2,6 @@ package request
 
 import (
 	"backend-crowdfunding/src/model"
-	"backend-crowdfunding/src/response"
 )
 
 type CreateCampaignInput struct {
@@ -12,7 +11,6 @@ type CreateCampaignInput struct {
 	Perks            string `json:"perks"`
 	BackerCount      uint   `json:"backer_count" validate:"required,numeric"`
 	GoalAmount       uint   `json:"goal_amount" validate:"required,numeric"`
-	User             model.User
 }
 
 type GetCampaignByIDInput struct {
@@ -40,5 +38,5 @@ type UploadCampaignImageInput struct {
 type CampaignsWithPaginationParam struct {
 	Name   string `json:"name,omitempty;query:name"`
 	UserID string `json:"user_id,omitempty"`
-	response.PaginationParam
+	PaginationParam
 }

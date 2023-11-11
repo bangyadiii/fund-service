@@ -2,7 +2,7 @@ package service
 
 import (
 	"backend-crowdfunding/config"
-	"errors"
+	"backend-crowdfunding/sdk/errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -15,7 +15,7 @@ type AuthService interface {
 }
 
 type JwtServiceImpl struct {
-	configuration config.Config
+	env config.Config
 }
 
 type CustomClaims struct {
@@ -25,7 +25,7 @@ type CustomClaims struct {
 
 func (s *JwtServiceImpl) GenerateToken(ID string, email string) (string, error) {
 	//JWT
-	SECRET_KEY := []byte(s.configuration.Get("ACCESS_SECRET_KEY"))
+	SecretKey := []byte(s.env.GetWithDefault("ACCESS_SECRET_KEY", "rahasiabanget"))
 	//claim = payload
 	registerClaims := jwt.RegisteredClaims{
 		ID:        ID,
@@ -40,9 +40,9 @@ func (s *JwtServiceImpl) GenerateToken(ID string, email string) (string, error) 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	signedToken, err := token.SignedString(SECRET_KEY)
+	signedToken, err := token.SignedString(SecretKey)
 	if err != nil {
-		return signedToken, err
+		return signedToken, errors.NewErrorf(500, nil, "failed to sign token", err)
 	}
 
 	return signedToken, nil
@@ -50,13 +50,13 @@ func (s *JwtServiceImpl) GenerateToken(ID string, email string) (string, error) 
 }
 func (s *JwtServiceImpl) ValidateToken(token string) (*jwt.Token, error) {
 	//
-	SECRET_KEY := []byte(s.configuration.Get("ACCESS_SECRET_KEY"))
+	SecretKey := []byte(s.env.GetWithDefault("ACCESS_SECRET_KEY", "rahasiabanget"))
 	decodedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		_, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			return nil, errors.New("invalid token")
+			return nil, errors.NewErrorf(400, nil, "validate token error")
 		}
-		return SECRET_KEY, nil
+		return SecretKey, nil
 	})
 
 	if err != nil {
@@ -95,6 +95,6 @@ func (s *JwtServiceImpl) ConvertTokenToCustomClaims(accessToken *jwt.Token) (*Cu
 
 func NewAuthService(cfg *config.Config) AuthService {
 	return &JwtServiceImpl{
-		configuration: *cfg,
+		env: *cfg,
 	}
 }

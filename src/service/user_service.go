@@ -1,18 +1,18 @@
 package service
 
 import (
+	"backend-crowdfunding/sdk/errors"
 	"backend-crowdfunding/sdk/password"
+	"backend-crowdfunding/src/dto/request"
+	"backend-crowdfunding/src/dto/response"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
-	"backend-crowdfunding/src/request"
-	"backend-crowdfunding/src/response"
 	"context"
-	"errors"
 	"time"
 )
 
 type UserService interface {
-	RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error)
+	RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, string, error)
 	Login(ctx context.Context, input request.LoginUserInput) (response.UserLoginResponse, error)
 	IsEmailAvailable(ctx context.Context, input request.CheckEmailInput) (bool, error)
 	SaveAvatar(ctx context.Context, ID string, fileName string) (model.User, error)
@@ -35,7 +35,7 @@ func NewUserService(r repository.UserRepository, authService AuthService) UserSe
 	}
 }
 
-func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, error) {
+func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.RegisterUserInput) (model.User, string, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
@@ -45,40 +45,47 @@ func (s *userServiceImpl) RegisterUser(ctx context.Context, input request.Regist
 	user.Avatar = input.Avatar
 	user.Occupation = input.Occupation
 	hash, err := password.HashPassword(input.Password)
+	var token string
 
 	if err != nil {
-		return user, err
+		return user, token, err
 	}
+
 	user.Password = hash
 
 	newUser, err := s.repository.SaveUser(c, user)
 
 	if err != nil {
-		return newUser, err
+		return newUser, token, err
 	}
 
-	return newUser, nil
+	token, err = s.authService.GenerateToken(newUser.ID, newUser.Email)
+
+	return newUser, token, nil
 
 }
 
-// Login This function is used to login with email and password.
+// Login This function is used to log in with email and password.
 func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInput) (response.UserLoginResponse, error) {
+	c, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+
 	var loginResponse response.UserLoginResponse
 
 	email := input.Email
 	pwd := input.Password
 
-	user, err := s.repository.FindByEmailUser(ctx, email)
+	user, err := s.repository.FindByEmailUser(c, email)
 	if err != nil {
 		return loginResponse, err
 	}
 
 	if user.ID == "" {
-		return loginResponse, errors.New("there is no user with this email")
+		return loginResponse, errors.NewErrorf(400, nil, "there is no user with this email")
 	}
 
 	if user.IsGoogleAccount {
-		return loginResponse, errors.New("this is google account")
+		return loginResponse, errors.NewErrorf(400, nil, "this is google account")
 	}
 
 	err = password.ComparePassword(user.Password, pwd)
@@ -95,7 +102,7 @@ func (s *userServiceImpl) Login(ctx context.Context, input request.LoginUserInpu
 	return loginResponse, nil
 }
 
-// LoginWithGoogle A function that is used to login with google account.
+// LoginWithGoogle A function that is used to log in with Google account.
 func (s *userServiceImpl) LoginWithGoogle(ctx context.Context, input request.LoginWithGoogleInput) (response.UserLoginResponse, error) {
 	c, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()

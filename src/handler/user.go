@@ -1,9 +1,10 @@
 package handler
 
 import (
-	"backend-crowdfunding/helper"
-	"backend-crowdfunding/src/request"
-	"backend-crowdfunding/src/response"
+	"backend-crowdfunding/sdk/errors"
+	"backend-crowdfunding/src/dto/request"
+	"backend-crowdfunding/src/dto/response"
+	"backend-crowdfunding/src/validator"
 	"fmt"
 	"net/http"
 	"path"
@@ -19,87 +20,95 @@ type UserHandler interface {
 	UploadAvatar(ctx *fiber.Ctx) error
 }
 
+// RegisterUser Register User
+// @Summary Register new user
+// @Tags Authentication
+// @Accept application/json
+// @Produce json
+// @Success 200 {object} response.Response{meta=response.Meta,data=response.UserLoginResponse} "Success"
+// @Failure 400 {object} response.Response{meta=response.Meta,errors=request.RegisterUserInput} "Validation Error"
+// @Failure 409 {object} response.Response{meta=response.Meta,errors=map[string]string} "Conflict email"
+// @Router /auth/register [post]
 func (r *Rest) RegisterUser(ctx *fiber.Ctx) error {
-	var input request.RegisterUserInput
+	var input = new(request.RegisterUserInput)
 
-	err := ctx.BodyParser(&input)
+	err := ctx.BodyParser(input)
 	if err != nil {
-		errors := helper.FormatErrorValidation(err)
-		data := response.APIResponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, errors)
-		return ctx.Status(http.StatusBadRequest).JSON(data)
-	}
-	var checkEmailFormatInput request.CheckEmailInput
-	checkEmailFormatInput.Email = input.Email
-
-	isAvailableEmail, err := r.service.User.IsEmailAvailable(ctx.Context(), checkEmailFormatInput)
-
-	if err != nil {
-		data := response.APIResponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(data)
-	}
-	if !isAvailableEmail {
-		respData := fiber.Map{"is_available": isAvailableEmail}
-		data := response.APIResponse("Email has been registered", http.StatusBadRequest, "error", respData, nil)
-		return ctx.Status(http.StatusBadRequest).JSON(data)
+		return response.RenderErrorResponse(ctx, "Bad Request", err)
 	}
 
-	newUser, err := r.service.User.RegisterUser(ctx.Context(), input)
-	if err != nil {
-		data := response.APIResponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(data)
+	if errMap := validator.Validate(input); errMap != nil {
+		err := errors.NewErrorf(http.StatusBadRequest, errMap, "Validation Error")
+		return response.RenderErrorResponse(ctx, err.Error(), err)
 	}
-	newToken, err := r.service.Auth.GenerateToken(newUser.ID, newUser.Email)
+
+	newUser, newToken, err := r.service.User.RegisterUser(ctx.Context(), *input)
 
 	if err != nil {
-		data := response.APIResponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(data)
+		return response.RenderErrorResponse(ctx, "Register failed", err)
 	}
+
 	formattedUser := response.FormatUserLogin(&newUser, newToken)
-
-	if err != nil {
-		data := response.APIResponse("Register failed", http.StatusBadRequest, "error", nil, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(data)
-	}
-
-	data := response.APIResponse("Register success", http.StatusOK, "success", formattedUser, nil)
-	return ctx.Status(http.StatusOK).JSON(data)
-
+	return response.SuccessResponse(ctx, http.StatusOK, "success", formattedUser)
 }
 
+// Login log in user
+// @Summary Login User
+// @Tags Authentication
+// @Accept application/json
+// @Produce json
+// @Success 200 {object} response.Response{meta=response.Meta,data=response.UserLoginResponse} "Success"
+// @Failure 400 {object} response.Response{meta=response.Meta,errors=request.LoginUserInput} "Validation Error"
+// @Router /auth/login [post]
 func (r *Rest) Login(ctx *fiber.Ctx) error {
-	var input request.LoginUserInput
+	var input = new(request.LoginUserInput)
 	err := ctx.BodyParser(&input)
 
 	if err != nil {
-		errors := helper.FormatErrorValidation(err)
-		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", errors)
+		return response.RenderErrorResponse(ctx, "Bad Request", err)
 	}
-	loginResponse, err := r.service.User.Login(ctx.Context(), input)
+
+	if errMap := validator.Validate(input); errMap != nil {
+		err := errors.NewErrorf(http.StatusBadRequest, errMap, "validation error")
+		return response.RenderErrorResponse(ctx, "validation error", err)
+	}
+
+	loginResponse, err := r.service.User.Login(ctx.Context(), *input)
+
 	if err != nil {
-		return response.ErrorResponse(ctx, http.StatusBadRequest, "BAD REQUEST", err.Error())
+		return response.RenderErrorResponse(ctx, "Login Failed", err)
 	}
 
 	return response.SuccessResponse(ctx, http.StatusOK, "OK", loginResponse)
 }
 
-func (r *Rest) CheckIsEmailAvailable(c *fiber.Ctx) error {
+// CheckIsEmailAvailable log in user
+// @Summary Check is email available
+// @Tags Authentication
+// @Accept application/json
+// @Produce json
+// @Router /auth/email-is-available [post]
+// @Success 200 {object} response.Response{data=map[string]string} "Success"
+// @Failure 400 {object} response.Response{errors=request.CheckEmailInput} "Validation Error"
+func (r *Rest) CheckIsEmailAvailable(ctx *fiber.Ctx) error {
 	var input request.CheckEmailInput
-	err := c.BodyParser(&input)
+	err := ctx.BodyParser(&input)
 
 	if err != nil {
-		errors := helper.FormatErrorValidation(err)
-		data := response.APIResponse("Bad Request", http.StatusUnprocessableEntity, "error", nil, errors)
-		return c.Status(http.StatusUnprocessableEntity).JSON(data)
+		return response.RenderErrorResponse(ctx, "Bad Request", err)
 	}
-	IsEmailAvailable, err := r.service.User.IsEmailAvailable(c.Context(), input)
-	if err != nil {
-		return err
 
-		// errors := helper.FormatErrorValidation(err)
-		// response.ErrorResponse(c, Http.StatusBadRequest, "BAD REQUEST", errors)
+	if errMap := validator.Validate(input); errMap != nil {
+		err := errors.NewErrorf(http.StatusBadRequest, errMap, "validation error")
+		return response.RenderErrorResponse(ctx, "validation error", err)
 	}
-	respData := fiber.Map{"is_available": IsEmailAvailable}
-	return response.SuccessResponse(c, http.StatusOK, "OK", respData)
+
+	IsEmailAvailable, err := r.service.User.IsEmailAvailable(ctx.Context(), input)
+	if err != nil {
+		return response.RenderErrorResponse(ctx, err.Error(), err)
+	}
+
+	return response.SuccessResponse(ctx, http.StatusOK, "OK", fiber.Map{"is_available": IsEmailAvailable})
 }
 
 func (r *Rest) UploadAvatar(ctx *fiber.Ctx) error {
@@ -107,54 +116,49 @@ func (r *Rest) UploadAvatar(ctx *fiber.Ctx) error {
 	userID := currentUser.ID
 	file, err := ctx.FormFile("avatar")
 	if err != nil {
-		data := fiber.Map{
-			"is_uploaded": false,
-		}
-		errors := helper.FormatErrorValidation(err)
-		resp := response.APIResponse("Failed to upload avatar 1", http.StatusBadRequest, "error", data, errors)
-		return ctx.Status(http.StatusBadRequest).JSON(resp)
+		return response.RenderErrorResponse(ctx, "Bad Request", err)
 	}
 
+	// TODO: create storage layer that implement upload file
 	filePath := fmt.Sprintf("assets/images/avatars/%s-%d%s", userID, time.Now().Unix(), path.Ext(file.Filename))
 	err = ctx.SaveFile(file, filePath)
 
 	if err != nil {
-		data := fiber.Map{
-			"is_uploaded": false,
-		}
-		resp := response.APIResponse("Failed to upload avatar 2", http.StatusBadRequest, "error", data, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(resp)
+		err := errors.NewErrorf(400, nil, "failed to upload avatar", err.Error())
+		return response.RenderErrorResponse(ctx, err.Error(), err)
 	}
 
 	_, err = r.service.User.SaveAvatar(ctx.Context(), userID, filePath)
 	if err != nil {
-		data := fiber.Map{
-			"is_uploaded": false,
-		}
-		errors := helper.FormatErrorValidation(err)
-		resp := response.APIResponse("Failed to upload avatar 3", http.StatusBadRequest, "error", data, errors)
-		return ctx.Status(http.StatusBadRequest).JSON(resp)
+		return response.RenderErrorResponse(ctx, err.Error(), err)
 	}
 
+	// TODO: instead of returning `is_uploaded: true`, better to returns its public URL
 	data := fiber.Map{
 		"is_uploaded": true,
 	}
-	resp := response.APIResponse("Avatar successfuly uploaded.", http.StatusOK, "success", data, nil)
-	return ctx.Status(http.StatusOK).JSON(resp)
+
+	return response.SuccessResponse(ctx, http.StatusOK, "Avatar successfully uploaded.", data)
 }
 
 func (r *Rest) LoginWithGoogle(ctx *fiber.Ctx) error {
-	var paramGoogle request.LoginWithGoogleInput
-	err := ctx.BodyParser(&paramGoogle)
+	var paramGoogle = new(request.LoginWithGoogleInput)
+	err := ctx.BodyParser(paramGoogle)
+
 	if err != nil {
-		data := response.APIResponse("Login failed.", http.StatusBadRequest, "error", nil, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(data)
+		return response.RenderErrorResponse(ctx, "Login failed", err)
 	}
-	userRes, err := r.service.User.LoginWithGoogle(ctx.Context(), paramGoogle)
+
+	if errMap := validator.Validate(paramGoogle); errMap != nil {
+		err := errors.NewErrorf(http.StatusBadRequest, errMap, "validation error")
+		return response.RenderErrorResponse(ctx, "validation error", err)
+	}
+
+	userRes, err := r.service.User.LoginWithGoogle(ctx.Context(), *paramGoogle)
 	if err != nil {
-		resp := response.APIResponse("Failed to upload avatar 2", http.StatusBadRequest, "error", nil, err.Error())
-		return ctx.Status(http.StatusBadRequest).JSON(resp)
+		err := errors.NewErrorf(400, nil, "failed to upload avatar", err.Error())
+		return response.RenderErrorResponse(ctx, "Bad Request", err)
 	}
-	res := response.APIResponse("Login success", http.StatusOK, "success", userRes, nil)
-	return ctx.Status(http.StatusOK).JSON(res)
+
+	return response.SuccessResponse(ctx, http.StatusOK, "Login success", userRes)
 }

@@ -3,18 +3,21 @@ package repository
 import (
 	"backend-crowdfunding/database"
 	"backend-crowdfunding/insfrastructure/cache"
-	"backend-crowdfunding/sdk/errors"
+	ierrors "backend-crowdfunding/sdk/errors"
 	"backend-crowdfunding/sdk/id"
+	"backend-crowdfunding/src/dto/request"
+	"backend-crowdfunding/src/dto/response"
 	"backend-crowdfunding/src/model"
-	"backend-crowdfunding/src/request"
-	"backend-crowdfunding/src/response"
 	"context"
 	"encoding/json"
+	"errors"
+	"gorm.io/gorm"
+	"net/http"
 	"strconv"
 )
 
 type CampaignRepository interface {
-	FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]*model.Campaign, *response.PaginationParam, error)
+	FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam, pgResp response.PaginationResponse) ([]*model.Campaign, *response.PaginationResponse, error)
 	GetCampaignByUserID(c context.Context, userID string) ([]*model.Campaign, error)
 	CreateCampaign(c context.Context, campaign model.Campaign) (model.Campaign, error)
 	GetCampaignByID(c context.Context, ID string) (model.Campaign, error)
@@ -37,9 +40,9 @@ func NewCampaignRepository(db *database.DB, r cache.RedisClient, idGenerator id.
 	}
 }
 
-func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam) ([]*model.Campaign, *response.PaginationParam, error) {
+func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.CampaignsWithPaginationParam, pgResp response.PaginationResponse) ([]*model.Campaign, *response.PaginationResponse, error) {
 	var campaigns []*model.Campaign
-	pg := response.FormatPaginationParam(params.PaginationParam)
+	pg := response.FormatPaginationParam(pgResp)
 	err := r.db.WithContext(c).
 		Model(&campaigns).
 		Where(params).
@@ -48,7 +51,7 @@ func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.Cam
 		return campaigns, nil, err
 	}
 	if ok := pg.ProcessPagination(); !ok {
-		return campaigns, nil, errors.NotFound("Campaigns")
+		return campaigns, nil, ierrors.NewErrorf(http.StatusNotFound, nil, "campaign not found")
 	}
 
 	key := "article:limit:" + strconv.Itoa(int(params.Limit)) + ":page:" + strconv.Itoa(int(params.Page))
@@ -83,7 +86,7 @@ func (r *campaignRepoImpl) FindAllCampaign(c context.Context, params request.Cam
 }
 
 func (r *campaignRepoImpl) GetCampaignByID(c context.Context, ID string) (model.Campaign, error) {
-	var campaigns model.Campaign = model.Campaign{ID: ID}
+	var campaigns = model.Campaign{ID: ID}
 	err := r.db.WithContext(c).
 		Preload("CampaignImages").
 		First(&campaigns).Error
@@ -122,10 +125,15 @@ func (r *campaignRepoImpl) CreateCampaign(c context.Context, campaign model.Camp
 }
 
 func (r *campaignRepoImpl) UpdateCampaign(c context.Context, campaign model.Campaign) (model.Campaign, error) {
-	err := r.db.WithContext(c).Save(&campaign).Error
+	err := r.db.WithContext(c).
+		Where("id = ?", campaign.ID).
+		Where("updated_at = ?", campaign.UpdatedAt).
+		Save(&campaign).Error
 
-	if err != nil {
-		return campaign, err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return campaign, ierrors.WrapErrorf(err, 404, nil, "campaign not found")
+	} else if err != nil {
+		return campaign, ierrors.WrapErrorf(err, 500, nil, err.Error())
 	}
 
 	return campaign, nil

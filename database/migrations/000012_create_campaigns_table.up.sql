@@ -1,8 +1,8 @@
 create table campaigns
 (
-    id                text not null
+    id                varchar(255) not null
         primary key,
-    user_id           text
+    user_id           varchar(255)
         constraint fk_campaigns_user
             references users,
     name              text,

@@ -3,7 +3,7 @@ package main
 import (
 	"backend-crowdfunding/config"
 	"backend-crowdfunding/database"
-	"backend-crowdfunding/database/migrations"
+	_ "backend-crowdfunding/docs"
 	"backend-crowdfunding/insfrastructure/cache"
 	"backend-crowdfunding/insfrastructure/firebase"
 	"backend-crowdfunding/sdk/id"
@@ -18,6 +18,13 @@ import (
 	"time"
 )
 
+// @title  Crowdfunding platform API
+// @version 1.0
+// @description Fund is a crowdfunding platform that enables clients to post their projects in search of funding. With Fund, clients can create campaigns and showcase their ideas to a community of potential investors. This project built with Go
+
+// @host localhost:8000
+// @BasePath /api/v1
+// @schemes http
 func main() {
 	var exitCode int
 	defer func() {
@@ -60,16 +67,6 @@ func buildServer(env config.Config) (*handler.Rest, func(), error) {
 	db, err := database.InitPostgresSQL(env)
 	if err != nil {
 		return nil, func() {}, err
-	}
-
-	m := migrations.Migration{DB: db}
-
-	// run migration
-	err = m.RunMigration()
-	if err != nil {
-		return nil, func() {
-			database.CloseDB(db)
-		}, err
 	}
 
 	//setup Redis

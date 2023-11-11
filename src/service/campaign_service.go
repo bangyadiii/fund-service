@@ -1,12 +1,12 @@
 package service
 
 import (
+	ierrors "backend-crowdfunding/sdk/errors"
+	"backend-crowdfunding/src/dto/request"
+	"backend-crowdfunding/src/dto/response"
 	"backend-crowdfunding/src/model"
 	"backend-crowdfunding/src/repository"
-	"backend-crowdfunding/src/request"
-	"backend-crowdfunding/src/response"
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -15,8 +15,8 @@ import (
 )
 
 type CampaignService interface {
-	GetCampaigns(c context.Context, params request.CampaignsWithPaginationParam) ([]response.CampaignResponse, *response.PaginationParam, error)
-	CreateCampaign(c context.Context, input request.CreateCampaignInput) (response.CampaignResponse, error)
+	GetCampaigns(c context.Context, params request.CampaignsWithPaginationParam) ([]response.CampaignResponse, *response.PaginationResponse, error)
+	CreateCampaign(c context.Context, input request.CreateCampaignInput, userID string) (response.CampaignResponse, error)
 	GetCampaignByID(c context.Context, input request.GetCampaignByIDInput) (response.CampaignDetailFormatter, error)
 	UpdateCampaign(c context.Context, campaignID request.GetCampaignByIDInput, input request.UpdateCampaignInput) (response.CampaignResponse, error)
 	UploadCampaignImage(c context.Context, input request.UploadCampaignImageInput) (model.CampaignImage, error)
@@ -34,12 +34,11 @@ func NewCampaignService(repository repository.CampaignRepository) CampaignServic
 	}
 }
 
-func (s *campaignServiceImpl) GetCampaigns(c context.Context, params request.CampaignsWithPaginationParam) ([]response.CampaignResponse, *response.PaginationParam, error) {
+func (s *campaignServiceImpl) GetCampaigns(c context.Context, params request.CampaignsWithPaginationParam) ([]response.CampaignResponse, *response.PaginationResponse, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
-
 	var campaignResponse []response.CampaignResponse
-	var pg *response.PaginationParam
+	var pg = response.ConvertPaginationParamToPaginationResponse(params.PaginationParam)
 
 	if params.UserID != "" {
 		campaigns, err := s.repository.GetCampaignByUserID(ctx, params.UserID)
@@ -48,7 +47,8 @@ func (s *campaignServiceImpl) GetCampaigns(c context.Context, params request.Cam
 		}
 		return response.FormatCampaignCollections(campaigns), pg, nil
 	}
-	campaigns, pg, err := s.repository.FindAllCampaign(ctx, params)
+
+	campaigns, pg, err := s.repository.FindAllCampaign(ctx, params, *pg)
 	if err != nil {
 		return campaignResponse, pg, err
 	}
@@ -72,7 +72,7 @@ func (s *campaignServiceImpl) GetCampaignByID(c context.Context, input request.G
 	return campaignRes, nil
 }
 
-func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.CreateCampaignInput) (response.CampaignResponse, error) {
+func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.CreateCampaignInput, userID string) (response.CampaignResponse, error) {
 	ctx, cancel := context.WithTimeout(c, s.timeout)
 	defer cancel()
 	var campaignRes response.CampaignResponse
@@ -80,7 +80,7 @@ func (s *campaignServiceImpl) CreateCampaign(c context.Context, input request.Cr
 	campaign := model.Campaign{}
 
 	campaign.Name = input.Name
-	campaign.UserID = input.User.ID
+	campaign.UserID = userID
 	campaign.ShortDescription = input.ShortDescription
 	campaign.Description = input.Description
 	campaign.Perks = input.Perks
@@ -110,7 +110,7 @@ func (s *campaignServiceImpl) UpdateCampaign(c context.Context, campaignID reque
 	}
 
 	if oldCampaign.UserID != input.User.ID {
-		return campaignRes, errors.New("Unauthorized")
+		return campaignRes, ierrors.NewErrorf(403, nil, "unauthorized")
 	}
 
 	oldCampaign.Description = input.Description
@@ -142,7 +142,7 @@ func (s *campaignServiceImpl) UploadCampaignImage(c context.Context, input reque
 	}
 
 	if campaign.User.ID != input.User.ID {
-		return image, errors.New("Unauthorized")
+		return image, ierrors.NewErrorf(403, nil, "unauthorized")
 	}
 
 	if input.IsPrimary {

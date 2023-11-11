@@ -6,7 +6,6 @@ type RegisterUserInput struct {
 	Occupation string `json:"occupation" validate:"required"`
 	Password   string `json:"password" validate:"required,gt=6"`
 	Avatar     string `json:"avatar" validate:"required"`
-	Role       string `json:"role" validate:"required"`
 }
 
 type LoginUserInput struct {

@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"backend-crowdfunding/src/response"
+	"backend-crowdfunding/src/dto/response"
 	"backend-crowdfunding/src/service"
 	"net/http"
 	"strings"
